@@ -22,15 +22,21 @@ An analytical application for automating the calculation of ratings and analysis
 
 ### Prerequisites
 
-Before running the project, you need to set the following environment variables:
+Before running the project, you need to have the following installed and configured:
 
-**Database:**
-- DB_URL: The JDBC URL of your MySQL database
-  (e.g., jdbc:mysql://localhost:3306/review_analytics).
-- DB_USERNAME: The username for your database.
-- DB_PASSWORD: The password for your database.
+**For Both Modules:**
+- JDK 17 with JavaFX included.
 
-**JWT:**
+**For the Backend:**
+- MySQL Server: A running instance of a MySQL database.
+- The project requires the following environment variables to be set for the server to connect to the database and configure security.
 
-- JWT_SECRET: A long, secret string for signing JWT tokens.
-- JWT_EXPIRATION: Token expiration time in milliseconds (e.g., 86400000 for 24 hours).
+    - `DB_URL`: The JDBC URL of your MySQL database (e.g., `jdbc:mysql://localhost:3306/review_analytics`).
+    - `DB_USERNAME`: The username for your database.
+    - `DB_PASSWORD`: The password for your database.
+    - `JWT_SECRET`: A long, secret string for signing JWT tokens.
+    - `JWT_EXPIRATION`: Token expiration time in milliseconds (e.g., 86400000 for 24 hours).
+
+### Installation & Run
+
+*(I will give step-by-step instructions on how to run the project locally)*
