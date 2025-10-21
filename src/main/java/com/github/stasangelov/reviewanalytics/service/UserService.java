@@ -1,5 +1,6 @@
-package com.github.stasangelov.reviewanalytics.security;
+package com.github.stasangelov.reviewanalytics.service;
 
+import com.github.stasangelov.reviewanalytics.dto.AuthRequest;
 import com.github.stasangelov.reviewanalytics.dto.RegistrationRequest;
 import com.github.stasangelov.reviewanalytics.entity.User;
 
@@ -10,4 +11,5 @@ import com.github.stasangelov.reviewanalytics.entity.User;
 
 public interface UserService {
     User registerUser(RegistrationRequest request);
+    String loginUser(AuthRequest authRequest);
 }

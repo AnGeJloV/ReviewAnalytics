@@ -1,10 +1,12 @@
 package com.github.stasangelov.reviewanalytics.controller;
 
 
+import com.github.stasangelov.reviewanalytics.dto.AuthRequest;
+import com.github.stasangelov.reviewanalytics.dto.AuthResponse;
 import com.github.stasangelov.reviewanalytics.dto.RegistrationRequest;
 import com.github.stasangelov.reviewanalytics.dto.UserDto;
 import com.github.stasangelov.reviewanalytics.entity.User;
-import com.github.stasangelov.reviewanalytics.security.UserService;
+import com.github.stasangelov.reviewanalytics.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -35,10 +37,17 @@ public class AuthController {
         return new ResponseEntity<>(responseDto, HttpStatus.CREATED);
     }
 
+    @PostMapping("/login")
+    public ResponseEntity<AuthResponse> loginUser(@RequestBody AuthRequest authRequest) {
+        String token = userService.loginUser(authRequest);
+        AuthResponse authResponse = new AuthResponse();
+        authResponse.setToken(token);
+        return ResponseEntity.ok(authResponse);
+    }
+
     /**
      * Вспомогательный метод для преобразования сущности User в UserDto
      */
-
     private UserDto mapUserToUserDto(User user) {
         UserDto dto = new UserDto();
         dto.setId(user.getId());
@@ -46,4 +55,5 @@ public class AuthController {
         dto.setEmail(user.getEmail());
         return dto;
     }
+
 }
