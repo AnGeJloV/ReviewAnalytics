@@ -31,6 +31,16 @@ public class RegistrationController {
 
     @FXML
     protected void onRegisterButtonClick(ActionEvent event) {
+
+        String name = nameField.getText();
+        String email = emailField.getText();
+        String password = passwordField.getText();
+
+        if (name.isBlank() || email.isBlank() || password.isBlank()) {
+            setInfoLabel("Все поля должны быть заполнены");
+            return;
+        }
+
         RegistrationRequest request = new RegistrationRequest();
         request.setName(nameField.getText());
         request.setEmail(emailField.getText());

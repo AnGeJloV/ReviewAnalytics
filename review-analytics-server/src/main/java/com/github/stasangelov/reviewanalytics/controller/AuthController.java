@@ -7,6 +7,7 @@ import com.github.stasangelov.reviewanalytics.dto.RegistrationRequest;
 import com.github.stasangelov.reviewanalytics.dto.UserDto;
 import com.github.stasangelov.reviewanalytics.entity.User;
 import com.github.stasangelov.reviewanalytics.service.UserService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -26,7 +27,7 @@ public class AuthController {
     private final UserService userService;
 
     @PostMapping("/register")
-    public ResponseEntity<UserDto> registerUser(@RequestBody RegistrationRequest request) {
+    public ResponseEntity<UserDto> registerUser(@Valid @RequestBody RegistrationRequest request) {
         // 1. Вызываем сервис для выполнения бизнес-логики регистрации
         User registeredUser = userService.registerUser(request);
 

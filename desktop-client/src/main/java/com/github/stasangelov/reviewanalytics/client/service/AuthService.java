@@ -1,10 +1,7 @@
 package com.github.stasangelov.reviewanalytics.client.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.stasangelov.reviewanalytics.client.model.AuthRequest;
-import com.github.stasangelov.reviewanalytics.client.model.AuthResponse;
-import com.github.stasangelov.reviewanalytics.client.model.RegistrationRequest;
-import com.github.stasangelov.reviewanalytics.client.model.UserDto;
+import com.github.stasangelov.reviewanalytics.client.model.*;
 import okhttp3.*;
 import java.io.IOException;
 
@@ -64,13 +61,25 @@ public class AuthService {
         }
     }
 
-    private <T> void handleResponse(Response response, Class<T> clazz, ApiCallback<T> callback) throws IOException {
-        String responseBody = response.body().string();
-        if (response.isSuccessful()) {
-            T responseObject = objectMapper.readValue(responseBody, clazz);
-            callback.onSuccess(responseObject);
-        } else {
-            callback.onError(response.code(), responseBody);
+    private <T> void handleResponse(Response response, Class<T> clazz, ApiCallback<T> callback) {
+        try (ResponseBody responseBody = response.body()) {
+            String bodyString = responseBody.string();
+            if (response.isSuccessful()) {
+                T responseObject = objectMapper.readValue(bodyString, clazz);
+                callback.onSuccess(responseObject);
+            } else {
+
+                try {
+                    ErrorResponseDto errorDto = objectMapper.readValue(bodyString, ErrorResponseDto.class);
+                    callback.onError(response.code(), errorDto.getMessage());
+                } catch (Exception e) {
+                    System.err.println("!!! ОШИБКА ПАРСИНГА JSON !!!");
+                    e.printStackTrace();
+                    callback.onError(response.code(), bodyString);
+                }
+            }
+        } catch (IOException e){
+            callback.onFailure(e);
         }
     }
 }

@@ -28,6 +28,15 @@ public class LoginController {
 
     @FXML
     protected void onLoginButtonClick(ActionEvent event) {
+
+        String email = emailField.getText();
+        String password = passwordField.getText();
+
+        if (email.isBlank() || password.isBlank()) {
+            setInfoLabel("Все поля должны быть заполнены");
+            return;
+        }
+
         AuthRequest request = new AuthRequest();
         request.setEmail(emailField.getText());
         request.setPassword(passwordField.getText());

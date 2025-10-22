@@ -4,6 +4,7 @@ import com.github.stasangelov.reviewanalytics.dto.AuthRequest;
 import com.github.stasangelov.reviewanalytics.dto.RegistrationRequest;
 import com.github.stasangelov.reviewanalytics.entity.Role;
 import com.github.stasangelov.reviewanalytics.entity.User;
+import com.github.stasangelov.reviewanalytics.exception.InvalidCredentialsException;
 import com.github.stasangelov.reviewanalytics.repository.RoleRepository;
 import com.github.stasangelov.reviewanalytics.repository.UserRepository;
 import com.github.stasangelov.reviewanalytics.security.JwtTokenProvider;
@@ -11,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -54,18 +56,22 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public String loginUser(AuthRequest authRequest){
-        // 1. Spring Security проверяет правильность email и пароля
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        authRequest.getEmail(),
-                        authRequest.getPassword()
-                )
-        );
-        // 2. Если все верно, помещаем объект аутентификации в SecurityContext
-        SecurityContextHolder.getContext().setAuthentication(authentication);
+    public String loginUser(AuthRequest authRequest) {
+        try {
+            // 1. Spring Security проверяет правильность email и пароля
+            Authentication authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(
+                            authRequest.getEmail(),
+                            authRequest.getPassword()
+                    )
+            );
+            // 2. Если все верно, помещаем объект аутентификации в SecurityContext
+            SecurityContextHolder.getContext().setAuthentication(authentication);
 
-        // 3. Генерируем и возвращаем JWT-токен
-        return jwtTokenProvider.createToken(authRequest.getEmail());
+            // 3. Генерируем и возвращаем JWT-токен
+            return jwtTokenProvider.createToken(authRequest.getEmail());
+        } catch (AuthenticationException e) {
+            throw new InvalidCredentialsException("Неправильный email или пароль");
+        }
     }
 }
