@@ -73,7 +73,7 @@ public class AuthService {
                     ErrorResponseDto errorDto = objectMapper.readValue(bodyString, ErrorResponseDto.class);
                     callback.onError(response.code(), errorDto.getMessage());
                 } catch (Exception e) {
-                    System.err.println("!!! ОШИБКА ПАРСИНГА JSON !!!");
+                    System.err.println("Ошибка парсинга json");
                     e.printStackTrace();
                     callback.onError(response.code(), bodyString);
                 }

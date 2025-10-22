@@ -11,6 +11,12 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 
 import java.util.stream.Collectors;
 
+/**
+ * Глобальный обработчик исключений для всего приложения.
+ * Аннотация @ControllerAdvice позволяет этому классу перехватывать исключения,
+ * выброшенные любым контроллером, и формировать стандартизированный ответ клиенту.
+ */
+
 @ControllerAdvice
 public class GlobalExceptionHandler {
     @ExceptionHandler(InvalidCredentialsException.class)

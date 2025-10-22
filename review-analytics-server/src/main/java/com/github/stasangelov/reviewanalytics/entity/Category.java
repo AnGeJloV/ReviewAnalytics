@@ -3,6 +3,8 @@ package com.github.stasangelov.reviewanalytics.entity;
 import jakarta.persistence.*;
 import lombok.Data;
 
+import java.util.List;
+
 /**
  * Сущность, представляющая категорию товара (например, "Ноутбуки", "Смартфоны").
  */
@@ -15,12 +17,9 @@ public class Category {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(unique = true)
+    @Column(unique = true, nullable = false)
     private String name;
 
-    private String brand;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "category_id")
-    private Category category;
+    @OneToMany(mappedBy = "category", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<Product> products;
 }
