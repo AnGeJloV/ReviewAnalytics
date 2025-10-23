@@ -1,5 +1,8 @@
 package com.github.stasangelov.reviewanalytics.client.service;
 
+import java.util.Collections;
+import java.util.Set;
+
 /**
  * Менеджер сессии, реализованный как синглтон (Singleton).
  * Его задача — хранить JWT-токен аутентифицированного пользователя в одном
@@ -10,6 +13,7 @@ package com.github.stasangelov.reviewanalytics.client.service;
 public class SessionManager {
     private static SessionManager instance;
     private String token;
+    private Set<String> roles = Collections.emptySet();
 
     private SessionManager() {}
 
@@ -24,11 +28,17 @@ public class SessionManager {
         return "Bearer " + token;
     }
 
-    public void setToken(String token) {
+    public void createSession(String token, Set<String> roles) {
         this.token = token;
+        this.roles = (roles != null) ? roles : Collections.emptySet();
+    }
+
+    public boolean hasRole(String roleName) {
+        return this.roles.contains(roleName);
     }
 
     public void clearSession() {
         this.token = null;
+        this.roles = Collections.emptySet();
     }
 }

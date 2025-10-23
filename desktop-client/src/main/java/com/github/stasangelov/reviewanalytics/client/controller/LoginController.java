@@ -45,7 +45,7 @@ public class LoginController {
             @Override
             public void onSuccess(AuthResponse result) {
                 // Сохраняем токен в сессии
-                SessionManager.getInstance().setToken(result.getToken());
+                SessionManager.getInstance().createSession(result.getToken(), result.getRoles());
                 Platform.runLater(() -> {
                     // Переключаемся на главный экран
                     ViewSwitcher.switchToMainView(event);

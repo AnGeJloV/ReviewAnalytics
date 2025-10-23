@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.github.stasangelov.reviewanalytics.client.controller.AdminController"
+      prefHeight="600.0" prefWidth="800.0">
+    <children>
+        <TabPane VBox.vgrow="ALWAYS">
+            <tabs>
+                <Tab text="Категории">
+                    <!-- Включаем содержимое вкладки из отдельного файла для модульности -->
+                    <content>
+                        <fx:include source="tabs/category-tab.fxml"/>
+                    </content>
+                </Tab>
+                <Tab text="Критерии">
+                    <content>
+                        <!-- TODO: fx:include для вкладки критериев -->
+                    </content>
+                </Tab>
+                <Tab text="Товары">
+                    <content>
+                        <!-- TODO: fx:include для вкладки товаров -->
+                    </content>
+                </Tab>
+            </tabs>
+        </TabPane>
+    </children>
+</VBox>

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ButtonBar?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
+
+<VBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.github.stasangelov.reviewanalytics.client.controller.dialog.CategoryEditDialogController"
+      prefWidth="400" spacing="10">
+    <padding>
+        <Insets top="15" right="15" bottom="15" left="15"/>
+    </padding>
+    <children>
+        <Label fx:id="titleLabel" text="Добавление категории" style="-fx-font-size: 18px; -fx-font-weight: bold;"/>
+        <GridPane hgap="10" vgap="10">
+            <padding>
+                <Insets top="10"/>
+            </padding>
+            <Label text="Название:" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+            <TextField fx:id="nameField" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+            <Label fx:id="errorLabel" text="" textFill="red" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
+        </GridPane>
+        <ButtonBar>
+            <buttons>
+                <Button text="Сохранить" onAction="#handleSave" defaultButton="true"/>
+                <Button text="Отмена" onAction="#handleCancel" cancelButton="true"/>
+            </buttons>
+        </ButtonBar>
+    </children>
+</VBox>
