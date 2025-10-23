@@ -1,4 +1,4 @@
-package com.github.stasangelov.reviewanalytics.dto;
+package com.github.stasangelov.reviewanalytics.client.model;
 
 import lombok.Data;
 

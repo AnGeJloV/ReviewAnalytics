@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.github.stasangelov.reviewanalytics.client.controller.dialog.ReviewEditDialogController"
+      prefWidth="500" spacing="15">
+    <padding>
+        <Insets top="15" right="15" bottom="15" left="15"/>
+    </padding>
+    <children>
+        <Label fx:id="titleLabel" text="Добавление отзыва" style="-fx-font-size: 18px; -fx-font-weight: bold;"/>
+        <GridPane hgap="10" vgap="10">
+            <Label text="Товар:" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+            <ComboBox fx:id="productComboBox" prefWidth="350" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+            <Label text="Дата:" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
+            <DatePicker fx:id="datePicker" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
+        </GridPane>
+
+        <Separator/>
+        <Label text="Оценки по критериям:"/>
+
+        <!-- Сюда будут динамически добавляться поля для оценок -->
+        <ScrollPane fx:id="criteriaScrollPane" fitToWidth="true" VBox.vgrow="ALWAYS">
+            <content>
+                <GridPane fx:id="criteriaGrid" hgap="10" vgap="10">
+                    <padding><Insets top="5" right="5" bottom="5" left="5"/></padding>
+                </GridPane>
+            </content>
+        </ScrollPane>
+
+        <Label fx:id="errorLabel" text="" textFill="red" wrapText="true"/>
+
+        <ButtonBar>
+            <buttons>
+                <Button text="Сохранить" onAction="#handleSave" defaultButton="true"/>
+                <Button text="Отмена" onAction="#handleCancel" cancelButton="true"/>
+            </buttons>
+        </ButtonBar>
+    </children>
+</VBox>

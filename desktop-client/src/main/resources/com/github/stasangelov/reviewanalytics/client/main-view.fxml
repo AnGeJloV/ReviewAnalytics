@@ -7,8 +7,24 @@
             xmlns:fx="http://javafx.com/fxml"
             fx:controller="com.github.stasangelov.reviewanalytics.client.controller.MainController"
             prefHeight="768.0" prefWidth="1024.0">
+    <top>
+        <MenuBar>
+            <menus>
+                <Menu text="Файл">
+                    <items>
+                        <MenuItem text="Выход" onAction="#onLogout"/>
+                    </items>
+                </Menu>
+                <Menu fx:id="adminMenu" text="Управление">
+                    <items>
+                        <MenuItem text="Администрирование" onAction="#onGoToAdminPanel"/>
+                    </items>
+                </Menu>
+            </menus>
+        </MenuBar>
+    </top>
     <center>
-        <Label text="Главная панель управления">
+        <Label text="Главная панель управления (Dashboard)">
             <font>
                 <Font size="24.0" />
             </font>
