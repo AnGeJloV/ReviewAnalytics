@@ -3,6 +3,7 @@ package com.github.stasangelov.reviewanalytics.client.controller.dialog;
 import com.github.stasangelov.reviewanalytics.client.model.CriterionDto;
 import com.github.stasangelov.reviewanalytics.client.model.ProductDto;
 import com.github.stasangelov.reviewanalytics.client.model.ReviewDto;
+import com.github.stasangelov.reviewanalytics.client.model.ReviewRatingDto;
 import com.github.stasangelov.reviewanalytics.client.service.DictionaryService;
 import com.github.stasangelov.reviewanalytics.client.service.ReviewService;
 import javafx.application.Platform;
@@ -16,10 +17,10 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.io.IOException;
-import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class ReviewEditDialogController {
 
@@ -29,34 +30,54 @@ public class ReviewEditDialogController {
     @FXML private GridPane criteriaGrid;
     @FXML private Label errorLabel;
 
+    @Setter private Stage dialogStage;
+    @Getter private boolean saveClicked = false;
+
+    private final DictionaryService dictionaryService = new DictionaryService();
     private final ReviewService reviewService = new ReviewService();
     private ReviewDto review;
-    @Getter
-    private boolean saveClicked = false;
+    private List<CriterionDto> criteriaList;
 
-    @Setter
-    private Stage dialogStage;
-    private final DictionaryService dictionaryService = new DictionaryService();
-
-    public void setReview(ReviewDto review) {
-        this.review = review;
-        // TODO: Заполнить поля данными из review, если это режим редактирования
-    }
-
-    /**
-     * Метод, который вызывается после загрузки FXML.
-     * Запускаем загрузку справочников.
-     */
     @FXML
     private void initialize() {
-        datePicker.setValue(LocalDate.now()); // Устанавливаем текущую дату по умолчанию
+        datePicker.setValue(java.time.LocalDate.now());
         configureComboBox();
         loadDictionaries();
     }
 
-    /**
-     * Настраивает ComboBox для корректного отображения названий товаров.
-     */
+    public void setReview(ReviewDto review) {
+        this.review = review;
+        Platform.runLater(this::updateUiForReview); // Откладываем обновление, чтобы UI успел загрузиться
+    }
+
+    private void updateUiForReview() {
+        if (review != null) {
+            // Режим редактирования
+            titleLabel.setText("Редактирование отзыва");
+            datePicker.setValue(review.getDateCreated().toLocalDate());
+
+            productComboBox.getItems().stream()
+                    .filter(p -> p.getId().equals(review.getProductId()))
+                    .findFirst()
+                    .ifPresent(productComboBox::setValue);
+            productComboBox.setDisable(true);
+
+            // Заполняем Spinner'ы оценками из отзыва
+            Map<Long, Integer> ratingsMap = review.getReviewRatings().stream()
+                    .collect(Collectors.toMap(ReviewRatingDto::getCriterionId, ReviewRatingDto::getRating));
+
+            for (Node node : criteriaGrid.getChildren()) {
+                if (node instanceof Spinner) {
+                    Spinner<Integer> spinner = (Spinner<Integer>) node;
+                    Long criterionId = (Long) spinner.getUserData();
+                    if (ratingsMap.containsKey(criterionId)) {
+                        spinner.getValueFactory().setValue(ratingsMap.get(criterionId));
+                    }
+                }
+            }
+        }
+    }
+
     private void configureComboBox() {
         productComboBox.setConverter(new StringConverter<>() {
             @Override
@@ -70,17 +91,15 @@ public class ReviewEditDialogController {
         });
     }
 
-    /**
-     * Асинхронно загружает списки товаров и критериев с сервера.
-     */
     private void loadDictionaries() {
         new Thread(() -> {
             try {
                 final List<ProductDto> products = dictionaryService.getAllProducts();
-                final List<CriterionDto> criteria = dictionaryService.getAllCriteria();
+                criteriaList = dictionaryService.getAllCriteria();
                 Platform.runLater(() -> {
                     productComboBox.getItems().setAll(products);
-                    populateCriteria(criteria);
+                    populateCriteria(criteriaList);
+                    updateUiForReview(); // Вызываем еще раз, если данные отзыва пришли раньше
                 });
             } catch (IOException e) {
                 Platform.runLater(() -> errorLabel.setText("Ошибка загрузки справочников."));
@@ -89,18 +108,13 @@ public class ReviewEditDialogController {
         }).start();
     }
 
-    /**
-     * Динамически создает поля для ввода оценок на основе списка критериев.
-     */
     private void populateCriteria(List<CriterionDto> criteria) {
         criteriaGrid.getChildren().clear();
         for (int i = 0; i < criteria.size(); i++) {
             CriterionDto criterion = criteria.get(i);
             Label label = new Label(criterion.getName() + ":");
-            // Мы будем использовать Spinner для удобного ввода чисел от 1 до 5
-            Spinner<Integer> ratingSpinner = new Spinner<>(1, 5, 3); // от 1 до 5, по умолчанию 3
-            ratingSpinner.setUserData(criterion.getId()); // Сохраняем ID критерия в элементе UI
-
+            Spinner<Integer> ratingSpinner = new Spinner<>(1, 5, 3);
+            ratingSpinner.setUserData(criterion.getId());
             criteriaGrid.add(label, 0, i);
             criteriaGrid.add(ratingSpinner, 1, i);
         }
@@ -113,10 +127,9 @@ public class ReviewEditDialogController {
             return;
         }
 
-        // Собираем данные из формы
         ReviewDto dto = new ReviewDto();
         dto.setProductId(productComboBox.getValue().getId());
-        dto.setDateCreated(datePicker.getValue());
+        dto.setDateCreated(datePicker.getValue().atStartOfDay());
 
         Map<Long, Integer> ratings = new HashMap<>();
         for (Node node : criteriaGrid.getChildren()) {
@@ -131,8 +144,11 @@ public class ReviewEditDialogController {
 
         new Thread(() -> {
             try {
-                // TODO: Вызывать update, если это режим редактирования
-                reviewService.createReview(dto);
+                if (review == null) {
+                    reviewService.createReview(dto);
+                } else {
+                    reviewService.updateReview(review.getId(), dto);
+                }
                 Platform.runLater(() -> {
                     saveClicked = true;
                     dialogStage.close();

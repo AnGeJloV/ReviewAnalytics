@@ -3,6 +3,7 @@ package com.github.stasangelov.reviewanalytics.client.controller.tabs;
 import com.github.stasangelov.reviewanalytics.client.ClientApplication;
 import com.github.stasangelov.reviewanalytics.client.controller.dialog.ReviewEditDialogController;
 import com.github.stasangelov.reviewanalytics.client.model.ReviewDto;
+import com.github.stasangelov.reviewanalytics.client.service.ApiException;
 import com.github.stasangelov.reviewanalytics.client.service.ReviewService;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
@@ -10,6 +11,7 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.cell.PropertyValueFactory;
@@ -18,7 +20,9 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 public class ReviewManagementTabController {
 
@@ -35,11 +39,11 @@ public class ReviewManagementTabController {
     private void setupTable() {
         TableColumn<ReviewDto, String> productCol = new TableColumn<>("Товар");
         productCol.setCellValueFactory(new PropertyValueFactory<>("productName"));
-        productCol.setPrefWidth(300);
+        productCol.setPrefWidth(350);
 
-        TableColumn<ReviewDto, String> dateCol = new TableColumn<>("Дата");
+        TableColumn<ReviewDto, LocalDateTime> dateCol = new TableColumn<>("Дата");
         dateCol.setCellValueFactory(new PropertyValueFactory<>("dateCreated"));
-        dateCol.setPrefWidth(150);
+        dateCol.setPrefWidth(200);
 
         TableColumn<ReviewDto, String> statusCol = new TableColumn<>("Статус");
         statusCol.setCellValueFactory(new PropertyValueFactory<>("status"));
@@ -54,13 +58,7 @@ public class ReviewManagementTabController {
                 final List<ReviewDto> reviews = reviewService.getAllReviews();
                 Platform.runLater(() -> reviewTable.setItems(FXCollections.observableArrayList(reviews)));
             } catch (IOException e) {
-                Platform.runLater(() -> {
-                    Alert alert = new Alert(Alert.AlertType.ERROR);
-                    alert.setTitle("Ошибка");
-                    alert.setHeaderText("Не удалось загрузить отзывы.");
-                    alert.setContentText(e.getMessage());
-                    alert.showAndWait();
-                });
+                Platform.runLater(() -> showErrorAlert("Ошибка сети", "Не удалось загрузить отзывы.", e.getMessage()));
                 e.printStackTrace();
             }
         }).start();
@@ -70,7 +68,7 @@ public class ReviewManagementTabController {
     private void handleAddReview() {
         boolean saved = showReviewEditDialog(null);
         if (saved) {
-            loadReviews(); // Обновляем таблицу, если сохранили
+            loadReviews();
         }
     }
 
@@ -78,11 +76,7 @@ public class ReviewManagementTabController {
     private void handleEditReview() {
         ReviewDto selected = reviewTable.getSelectionModel().getSelectedItem();
         if (selected == null) {
-            Alert alert = new Alert(Alert.AlertType.WARNING);
-            alert.setTitle("Предупреждение");
-            alert.setHeaderText("Отзыв не выбран.");
-            alert.setContentText("Пожалуйста, выберите отзыв в таблице для редактирования.");
-            alert.showAndWait();
+            showInfoAlert("Ничего не выбрано", "Пожалуйста, выберите отзыв для редактирования.");
             return;
         }
         boolean saved = showReviewEditDialog(selected);
@@ -93,30 +87,47 @@ public class ReviewManagementTabController {
 
     @FXML
     private void handleApproveReview() {
-        // TODO: Реализовать логику одобрения
-        System.out.println("Approve clicked");
+        changeSelectedReviewStatus("ACTIVE");
     }
 
     @FXML
     private void handleRejectReview() {
-        // TODO: Реализовать логику отклонения
-        System.out.println("Reject clicked");
+        changeSelectedReviewStatus("REJECTED");
+    }
+
+    private void changeSelectedReviewStatus(String status) {
+        ReviewDto selected = reviewTable.getSelectionModel().getSelectedItem();
+        if (selected == null) {
+            showInfoAlert("Ничего не выбрано", "Пожалуйста, выберите отзыв для изменения статуса.");
+            return;
+        }
+
+        new Thread(() -> {
+            try {
+                reviewService.changeStatus(selected.getId(), status);
+                Platform.runLater(this::loadReviews);
+            } catch (ApiException e) {
+                Platform.runLater(() -> showErrorAlert("Ошибка API (" + e.getStatusCode() + ")", "Не удалось изменить статус.", e.getMessage()));
+            } catch (IOException e) {
+                Platform.runLater(() -> showErrorAlert("Ошибка сети", "Не удалось изменить статус.", e.getMessage()));
+            }
+        }).start();
     }
 
     private boolean showReviewEditDialog(ReviewDto review) {
         try {
             FXMLLoader loader = new FXMLLoader(ClientApplication.class.getResource("review-edit-dialog.fxml"));
             VBox page = loader.load();
+
             Stage dialogStage = new Stage();
             dialogStage.setTitle(review == null ? "Добавление отзыва" : "Редактирование отзыва");
             dialogStage.initModality(Modality.WINDOW_MODAL);
-            // Устанавливаем родительское окно, чтобы диалог открывался по центру
             dialogStage.initOwner(reviewTable.getScene().getWindow());
             dialogStage.setScene(new Scene(page));
 
             ReviewEditDialogController controller = loader.getController();
             controller.setDialogStage(dialogStage);
-            controller.setReview(review); // Передаем отзыв (или null)
+            controller.setReview(review);
 
             dialogStage.showAndWait();
             return controller.isSaveClicked();
@@ -124,5 +135,21 @@ public class ReviewManagementTabController {
             e.printStackTrace();
             return false;
         }
+    }
+
+    private void showErrorAlert(String title, String header, String content) {
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle("Ошибка");
+        alert.setHeaderText(header);
+        alert.setContentText(content);
+        alert.showAndWait();
+    }
+
+    private void showInfoAlert(String title, String content) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("Информация");
+        alert.setHeaderText(title);
+        alert.setContentText(content);
+        alert.showAndWait();
     }
 }
