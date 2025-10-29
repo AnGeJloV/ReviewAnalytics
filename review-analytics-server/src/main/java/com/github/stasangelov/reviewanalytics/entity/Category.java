@@ -2,8 +2,11 @@ package com.github.stasangelov.reviewanalytics.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * Сущность, представляющая категорию товара (например, "Ноутбуки", "Смартфоны").
@@ -12,6 +15,8 @@ import java.util.List;
 @Data
 @Entity
 @Table(name = "categories")
+@ToString(exclude = {"products", "criteria"})
+@EqualsAndHashCode(exclude = {"products", "criteria"})
 public class Category {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -22,4 +27,16 @@ public class Category {
 
     @OneToMany(mappedBy = "category", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Product> products;
+
+    /**
+     * Набор критериев, применимых к этой категории.
+     * Связь Многие-ко-Многим.
+     */
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "category_criteria", // Название связующей таблицы
+            joinColumns = @JoinColumn(name = "category_id"),
+            inverseJoinColumns = @JoinColumn(name = "criterion_id")
+    )
+    private Set<Criterion> criteria;
 }

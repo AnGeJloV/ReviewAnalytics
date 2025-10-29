@@ -4,6 +4,7 @@ import com.github.stasangelov.reviewanalytics.entity.Review;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
+import com.fasterxml.jackson.annotation.JsonFormat;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -26,7 +27,10 @@ public class ReviewDto {
     private Long productId;
 
     @NotNull(message = "Дата должна быть указана")
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime dateCreated;
+
+    private Double integralRating;
 
     @NotEmpty(message = "Должна быть хотя бы одна оценка")
     private Map<Long, Integer> ratings; // Карта [criterionId -> rating]

@@ -7,13 +7,12 @@ import com.github.stasangelov.reviewanalytics.client.service.ApiException;
 import com.github.stasangelov.reviewanalytics.client.service.ReviewService;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.collections.transformation.FilteredList;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
-import javafx.scene.control.Alert;
-import javafx.scene.control.ButtonType;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableView;
+import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
@@ -22,17 +21,20 @@ import javafx.stage.Stage;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 public class ReviewManagementTabController {
 
     @FXML
     private TableView<ReviewDto> reviewTable;
+    @FXML private TextField searchField;
     private final ReviewService reviewService = new ReviewService();
+
+    private final ObservableList<ReviewDto> allReviews = FXCollections.observableArrayList();
 
     @FXML
     public void initialize() {
         setupTable();
+        setupSearchFilter();
         loadReviews();
     }
 
@@ -41,22 +43,74 @@ public class ReviewManagementTabController {
         productCol.setCellValueFactory(new PropertyValueFactory<>("productName"));
         productCol.setPrefWidth(350);
 
+        TableColumn<ReviewDto, Double> ratingCol = new TableColumn<>("Интегр. рейтинг");
+        ratingCol.setCellValueFactory(new PropertyValueFactory<>("integralRating"));
+        ratingCol.setPrefWidth(120);
+
+        ratingCol.setCellFactory(column -> new TableCell<>() {
+            @Override
+            protected void updateItem(Double item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                } else {
+                    setText(String.format("%.2f", item));
+                }
+            }
+        });
+
         TableColumn<ReviewDto, LocalDateTime> dateCol = new TableColumn<>("Дата");
         dateCol.setCellValueFactory(new PropertyValueFactory<>("dateCreated"));
-        dateCol.setPrefWidth(200);
+        dateCol.setPrefWidth(150);
 
         TableColumn<ReviewDto, String> statusCol = new TableColumn<>("Статус");
         statusCol.setCellValueFactory(new PropertyValueFactory<>("status"));
         statusCol.setPrefWidth(100);
 
-        reviewTable.getColumns().setAll(productCol, dateCol, statusCol);
+        reviewTable.getColumns().setAll(productCol, ratingCol, dateCol, statusCol);
+    }
+
+    /**
+     * Настраивает логику фильтрации таблицы на основе текста в поле поиска.
+     */
+    private void setupSearchFilter() {
+        // 1. Оборачиваем наш основной список в FilteredList.
+        FilteredList<ReviewDto> filteredData = new FilteredList<>(allReviews, p -> true);
+
+        // 2. Добавляем "слушателя" на изменение текста в поле поиска.
+        searchField.textProperty().addListener((observable, oldValue, newValue) -> {
+            filteredData.setPredicate(review -> {
+                // Если поле поиска пустое, показываем все отзывы.
+                if (newValue == null || newValue.isEmpty()) {
+                    return true;
+                }
+
+                String lowerCaseFilter = newValue.toLowerCase();
+
+                // Проверяем, содержит ли название товара поисковый запрос.
+                // Дополнительно проверяем, что productName не null, чтобы избежать ошибок.
+                if (review.getProductName() != null && review.getProductName().toLowerCase().contains(lowerCaseFilter)) {
+                    return true;
+                }
+
+                // Можно добавить поиск по другим полям, например, по статусу
+                // if (review.getStatus() != null && review.getStatus().toLowerCase().contains(lowerCaseFilter)) {
+                //     return true;
+                // }
+
+                return false; // Не найдено совпадений.
+            });
+        });
+
+        // 3. Привязываем отфильтрованные данные к таблице.
+        reviewTable.setItems(filteredData);
     }
 
     private void loadReviews() {
         new Thread(() -> {
             try {
                 final List<ReviewDto> reviews = reviewService.getAllReviews();
-                Platform.runLater(() -> reviewTable.setItems(FXCollections.observableArrayList(reviews)));
+                Platform.runLater(() -> allReviews.setAll(reviews));
             } catch (IOException e) {
                 Platform.runLater(() -> showErrorAlert("Ошибка сети", "Не удалось загрузить отзывы.", e.getMessage()));
                 e.printStackTrace();

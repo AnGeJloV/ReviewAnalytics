@@ -42,7 +42,45 @@ public class ReviewEditDialogController {
     private void initialize() {
         datePicker.setValue(java.time.LocalDate.now());
         configureComboBox();
-        loadDictionaries();
+        // Загружаем только товары при инициализации
+        loadProducts();
+
+        // Добавляем "слушателя" на выбор товара в ComboBox
+        productComboBox.getSelectionModel().selectedItemProperty().addListener(
+                (observable, oldValue, newValue) -> {
+                    if (newValue != null) {
+                        // Как только товар выбран, загружаем критерии для его категории
+                        loadCriteriaForCategory(newValue.getCategoryId());
+                    }
+                }
+        );
+    }
+
+    private void loadProducts() {
+        new Thread(() -> {
+            try {
+                final List<ProductDto> products = dictionaryService.getAllProducts();
+                Platform.runLater(() -> {
+                    productComboBox.getItems().setAll(products);
+                    updateUiForReview();
+                });
+            } catch (IOException e) { /* ... */ }
+        }).start();
+    }
+
+    /**
+     * Новый метод для загрузки критериев по ID категории.
+     */
+    private void loadCriteriaForCategory(Long categoryId) {
+        new Thread(() -> {
+            try {
+                criteriaList = dictionaryService.getCriteriaByCategoryId(categoryId);
+                Platform.runLater(() -> {
+                    populateCriteria(criteriaList);
+                    updateUiForReview(); // Обновляем UI, чтобы заполнить оценки, если это режим редактирования
+                });
+            } catch (IOException e) { /* ... */ }
+        }).start();
     }
 
     public void setReview(ReviewDto review) {
@@ -82,30 +120,20 @@ public class ReviewEditDialogController {
         productComboBox.setConverter(new StringConverter<>() {
             @Override
             public String toString(ProductDto product) {
-                return product == null ? "" : product.getName() + " (" + product.getBrand() + ")";
+                if (product == null) {
+                    return "";
+                }
+                return String.format("[%s] %s (%s)",
+                        product.getCategoryName(),
+                        product.getName(),
+                        product.getBrand()
+                );
             }
             @Override
             public ProductDto fromString(String string) {
                 return null;
             }
         });
-    }
-
-    private void loadDictionaries() {
-        new Thread(() -> {
-            try {
-                final List<ProductDto> products = dictionaryService.getAllProducts();
-                criteriaList = dictionaryService.getAllCriteria();
-                Platform.runLater(() -> {
-                    productComboBox.getItems().setAll(products);
-                    populateCriteria(criteriaList);
-                    updateUiForReview(); // Вызываем еще раз, если данные отзыва пришли раньше
-                });
-            } catch (IOException e) {
-                Platform.runLater(() -> errorLabel.setText("Ошибка загрузки справочников."));
-                e.printStackTrace();
-            }
-        }).start();
     }
 
     private void populateCriteria(List<CriterionDto> criteria) {

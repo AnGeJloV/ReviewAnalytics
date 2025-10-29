@@ -93,9 +93,9 @@ public class ReviewService {
      * @param review Сущность отзыва с его оценками.
      * @return Целочисленное значение рейтинга (в примере округляем до целого).
      */
-    private Integer calculateIntegralRating(Review review) {
+    private Double calculateIntegralRating(Review review) {
         if (review.getReviewRatings() == null || review.getReviewRatings().isEmpty()) {
-            return 0;
+            return 0.0;
         }
 
         double weightedSum = 0.0;
@@ -108,11 +108,11 @@ public class ReviewService {
         }
 
         if (totalWeight == 0) {
-            return 0; // Избегаем деления на ноль
+            return 0.0; // Избегаем деления на ноль
         }
 
         // Округляем до ближайшего целого. Можно использовать Math.round() для типа long.
-        return (int) Math.round(weightedSum / totalWeight);
+        return weightedSum / totalWeight;
     }
 
     private ReviewDto toDto(Review review) {
@@ -122,6 +122,7 @@ public class ReviewService {
         dto.setStatus(review.getStatus());
         dto.setProductId(review.getProduct().getId());
         dto.setProductName(review.getProduct().getName());
+        dto.setIntegralRating(review.getIntegralRating());
 
         List<ReviewRatingDto> ratingDtos = review.getReviewRatings().stream().map(rating -> {
             ReviewRatingDto ratingDto = new ReviewRatingDto();

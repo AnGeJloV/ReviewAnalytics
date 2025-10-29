@@ -44,4 +44,11 @@ public class DictionaryService {
             return objectMapper.readValue(response.body().string(), typeReference);
         }
     }
+    /**
+     * Получает с сервера список критериев для конкретной категории.
+     */
+    public List<CriterionDto> getCriteriaByCategoryId(Long categoryId) throws IOException {
+        String url = BASE_URL + "/criteria/by-category/" + categoryId;
+        return fetchList(url, new TypeReference<>() {});
+    }
 }

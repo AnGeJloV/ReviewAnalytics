@@ -36,4 +36,15 @@ public class CriterionService {
         dto.setWeight(criterion.getWeight());
         return dto;
     }
+
+    /**
+     * Возвращает список критериев для конкретной категории.
+     * @param categoryId ID категории.
+     * @return Список DTO критериев.
+     */
+    public List<CriterionDto> getByCategoryId(Long categoryId) {
+        return criterionRepository.findByCategories_Id(categoryId).stream()
+                .map(this::toDto)
+                .collect(Collectors.toList());
+    }
 }

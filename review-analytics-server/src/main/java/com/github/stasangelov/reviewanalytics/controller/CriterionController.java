@@ -27,4 +27,13 @@ public class CriterionController {
         return ResponseEntity.ok(criterionService.getAll());
     }
 
+    /**
+     * Эндпоинт для получения критериев, отфильтрованных по ID категории.
+     * Доступен и Админу, и Аналитику.
+     */
+    @GetMapping("/by-category/{categoryId}")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'ANALYST')")
+    public ResponseEntity<List<CriterionDto>> getCriteriaByCategory(@PathVariable Long categoryId) {
+        return ResponseEntity.ok(criterionService.getByCategoryId(categoryId));
+    }
 }

@@ -7,7 +7,7 @@
 <VBox xmlns="http://javafx.com/javafx"
       xmlns:fx="http://javafx.com/fxml"
       fx:controller="com.github.stasangelov.reviewanalytics.client.controller.dialog.ReviewEditDialogController"
-      prefWidth="500" spacing="15">
+      prefWidth="500" prefHeight="500" spacing="15">
     <padding>
         <Insets top="15" right="15" bottom="15" left="15"/>
     </padding>

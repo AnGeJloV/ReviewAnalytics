@@ -24,7 +24,7 @@ public class Review {
     private LocalDateTime dateCreated;
 
     @Column(name = "integral_rating")
-    private Integer integralRating; // Общий рейтинг
+    private Double integralRating; // Общий рейтинг
 
     @Enumerated(EnumType.STRING)
     @Column(length = 20, nullable = false)
