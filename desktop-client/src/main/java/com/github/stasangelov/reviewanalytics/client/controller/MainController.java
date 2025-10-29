@@ -1,9 +1,11 @@
 package com.github.stasangelov.reviewanalytics.client.controller;
 
+import com.github.stasangelov.reviewanalytics.client.model.CategoryDto;
 import com.github.stasangelov.reviewanalytics.client.model.DashboardDto;
 import com.github.stasangelov.reviewanalytics.client.model.KpiDto;
 import com.github.stasangelov.reviewanalytics.client.model.TopProductDto;
 import com.github.stasangelov.reviewanalytics.client.service.AnalyticsService;
+import com.github.stasangelov.reviewanalytics.client.service.DictionaryService;
 import com.github.stasangelov.reviewanalytics.client.service.SessionManager;
 import com.github.stasangelov.reviewanalytics.client.util.ViewSwitcher;
 import javafx.application.Platform;
@@ -13,17 +15,17 @@ import javafx.scene.Node;
 import javafx.scene.chart.BarChart;
 import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.XYChart;
-import javafx.scene.control.Alert;
-import javafx.scene.control.Label;
-import javafx.scene.control.Menu;
+import javafx.scene.control.*;
 import javafx.scene.paint.Color;
 import javafx.scene.Group;
 import javafx.scene.Parent;
 import javafx.scene.text.Text;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
+import javafx.util.StringConverter;
 
 import java.io.IOException;
+import java.time.LocalDate;
 import java.util.Collections;
 import java.util.List;
 
@@ -37,7 +39,12 @@ public class MainController {
     @FXML private BarChart<Number, String> topProductsChart;
     @FXML private BarChart<Number, String> worstProductsChart;
 
+    @FXML private DatePicker startDatePicker;
+    @FXML private DatePicker endDatePicker;
+    @FXML private ComboBox<CategoryDto> categoryComboBox;
+
     private final AnalyticsService analyticsService = new AnalyticsService();
+    private final DictionaryService dictionaryService = new DictionaryService();
 
     /**
      * Метод, который вызывается JavaFX после загрузки FXML.
@@ -49,7 +56,56 @@ public class MainController {
         if (!SessionManager.getInstance().hasRole("ADMIN")) {
             adminMenu.setVisible(false);
         }
+        setupCategoryFilter(); // Настраиваем ComboBox
         // Запускаем загрузку аналитических данных
+        loadDashboardData();
+    }
+
+    /**
+     * Настраивает ComboBox для категорий: загружает данные и устанавливает, как их отображать.
+     */
+    private void setupCategoryFilter() {
+        // Настраиваем, чтобы в списке отображалось имя категории
+        categoryComboBox.setConverter(new StringConverter<>() {
+            @Override
+            public String toString(CategoryDto category) {
+                return category == null ? "Все категории" : category.getName();
+            }
+            @Override
+            public CategoryDto fromString(String string) {
+                return null;
+            }
+        });
+
+        // Загружаем категории с сервера в фоновом потоке
+        new Thread(() -> {
+            try {
+                final List<CategoryDto> categories = dictionaryService.getAllCategories();
+                Platform.runLater(() -> categoryComboBox.getItems().addAll(categories));
+            } catch (IOException e) {
+                e.printStackTrace(); // TODO: Показать Alert
+            }
+        }).start();
+    }
+
+    /**
+     * Обработчик нажатия кнопки "Применить".
+     * Просто вызывает основной метод загрузки данных.
+     */
+    @FXML
+    private void applyFilters() {
+        loadDashboardData();
+    }
+
+    /**
+     * Обработчик нажатия кнопки "Сбросить".
+     * Очищает все поля фильтров и перезагружает данные.
+     */
+    @FXML
+    private void resetFilters() {
+        startDatePicker.setValue(null);
+        endDatePicker.setValue(null);
+        categoryComboBox.getSelectionModel().clearSelection();
         loadDashboardData();
     }
 
@@ -57,9 +113,15 @@ public class MainController {
      * Асинхронно загружает данные с сервера и обновляет UI.
      */
     private void loadDashboardData() {
+
+        LocalDate startDate = startDatePicker.getValue();
+        LocalDate endDate = endDatePicker.getValue();
+        CategoryDto selectedCategory = categoryComboBox.getSelectionModel().getSelectedItem();
+        Long categoryId = (selectedCategory != null) ? selectedCategory.getId() : null;
+
         new Thread(() -> {
             try {
-                final DashboardDto dashboardData = analyticsService.getDashboardData();
+                final DashboardDto dashboardData = analyticsService.getDashboardData(startDate, endDate, categoryId);
                 Platform.runLater(() -> {
                     updateKpis(dashboardData.getKpis());
                     updateTopProductsChart(topProductsChart, dashboardData.getTopRatedProducts(), "Лучшие");

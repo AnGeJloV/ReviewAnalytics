@@ -33,8 +33,37 @@
                 <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
             </padding>
             <children>
-                <!-- ЗАГОЛОВОК -->
-                <Label styleClass="dashboard-title" text="Информационная панель" />
+
+                <HBox alignment="CENTER">
+                    <children>
+                        <Label styleClass="dashboard-title" text="Информационная панель" />
+                    </children>
+                </HBox>
+
+                <HBox alignment="BOTTOM_LEFT" spacing="10.0" style="-fx-background-color: white; -fx-padding: 10; -fx-background-radius: 8; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 10, 0.5, 0, 1);">
+                    <children>
+                        <VBox>
+                            <children>
+                                <Label text="Период с:"/>
+                                <DatePicker fx:id="startDatePicker"/>
+                            </children>
+                        </VBox>
+                        <VBox>
+                            <children>
+                                <Label text="по:"/>
+                                <DatePicker fx:id="endDatePicker"/>
+                            </children>
+                        </VBox>
+                        <VBox>
+                            <children>
+                                <Label text="Категория:"/>
+                                <ComboBox fx:id="categoryComboBox" prefWidth="250.0" promptText="Все категории"/>
+                            </children>
+                        </VBox>
+                        <Button onAction="#applyFilters" text="Применить"/>
+                        <Button onAction="#resetFilters" text="Сбросить"/>
+                    </children>
+                </HBox>
 
                 <!-- СЕКЦИЯ KPI-КАРТОЧЕК (теперь в HBox) -->
                 <HBox spacing="20.0">
