@@ -1,0 +1,74 @@
+/* Общий фон для всего дашборда */
+.dashboard-background {
+    -fx-background-color: #f4f4f4;
+}
+
+/* Стиль для заголовка "Информационная панель" */
+.dashboard-title {
+    -fx-font-size: 24px;
+    -fx-font-weight: bold;
+}
+
+/* --- Стили для KPI-карточек --- */
+.kpi-card {
+    -fx-background-color: white;
+    -fx-padding: 20;
+    -fx-background-radius: 8; /* Скругление углов */
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 10, 0.5, 0, 1); /* Легкая тень */
+}
+
+.kpi-title {
+    -fx-font-size: 14px;
+    -fx-text-fill: #666; /* Серый цвет для подписи */
+}
+
+.kpi-value {
+    -fx-font-size: 36px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #333; /* Темно-серый для цифр */
+}
+
+/* --- Стили для карточек с графиками --- */
+.chart-card {
+    -fx-background-color: white;
+    -fx-padding: 15;
+    -fx-background-radius: 8;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 10, 0.5, 0, 1);
+}
+
+.chart-title {
+    -fx-font-weight: bold;
+    -fx-padding: 0 0 10 5; /* Отступ снизу и слева */
+}
+
+/* Убираем лишние рамки и фон у самого графика, чтобы он вписался в карточку */
+.chart {
+    -fx-padding: 0;
+}
+
+/* Стиль для оси Y (названия товаров), чтобы они были четче */
+.chart .axis-label {
+    -fx-font-size: 12px;
+}
+
+.chart .axis .tick-label {
+    -fx-font-size: 10px;
+}
+
+/* --- Стили для столбцов в BarChart --- */
+
+/* --- Градиент для ЛУЧШИХ товаров (темные оттенки) --- */
+/* data4 - самый лучший (вверху), data0 - пятый в топе (внизу) */
+#topProductsChart .data4.chart-bar { -fx-bar-fill: #333333; } /* Ваш базовый цвет, самый темный */
+#topProductsChart .data3.chart-bar { -fx-bar-fill: #4D4D4D; }
+#topProductsChart .data2.chart-bar { -fx-bar-fill: #666666; }
+#topProductsChart .data1.chart-bar { -fx-bar-fill: #808080; }
+#topProductsChart .data0.chart-bar { -fx-bar-fill: #999999; } /* Самый "светлый" из темных */ /* Самый "светлый" из темных */
+
+/* --- Градиент для ХУДШИХ товаров (светлые оттенки) --- */
+/* data4 - самый худший (вверху), data0 - пятый с конца (внизу) */
+#worstProductsChart .data4.chart-bar { -fx-bar-fill: #ECF0F1; } /* Очень светлый серый */
+#worstProductsChart .data3.chart-bar { -fx-bar-fill: #D2D7D3; }
+#worstProductsChart .data2.chart-bar { -fx-bar-fill: #BDBDBD; }
+#worstProductsChart .data1.chart-bar { -fx-bar-fill: #A9A9A9; }
+#worstProductsChart .data0.chart-bar { -fx-bar-fill: #8D8D8D; } /* Самый "темный" из светлых */

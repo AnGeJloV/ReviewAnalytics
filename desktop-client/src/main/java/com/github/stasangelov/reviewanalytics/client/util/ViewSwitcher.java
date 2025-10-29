@@ -18,16 +18,30 @@ import java.io.IOException;
 
 public class ViewSwitcher {
 
-    public static void switchScene(ActionEvent event, String fxmlFile) {
+    /**
+     * Переключает сцену в указанном окне (Stage).
+     * @param stage Окно, в котором нужно сменить сцену.
+     * @param fxmlFile FXML-файл новой сцены.
+     */
+    public static void switchScene(Stage stage, String fxmlFile) {
         try {
             FXMLLoader fxmlLoader = new FXMLLoader(ClientApplication.class.getResource(fxmlFile));
             Scene scene = new Scene(fxmlLoader.load());
-            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
             stage.setScene(scene);
             stage.centerOnScreen();
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    /**
+     * Старый метод, который работает для событий от Node (например, кнопок).
+     * Мы его оставим, так как он используется в других местах.
+     */
+    public static void switchScene(ActionEvent event, String fxmlFile) {
+        Node source = (Node) event.getSource();
+        Stage stage = (Stage) source.getScene().getWindow();
+        switchScene(stage, fxmlFile);
     }
 
     public static void switchToMainView(ActionEvent event) {

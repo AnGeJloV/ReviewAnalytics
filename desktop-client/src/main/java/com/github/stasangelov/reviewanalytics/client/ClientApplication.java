@@ -1,6 +1,7 @@
 package com.github.stasangelov.reviewanalytics.client;
 
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
@@ -19,6 +20,10 @@ public class ClientApplication extends Application {
         Scene scene = new Scene(fxmlLoader.load()); // Размеры возьмутся из FXML
         stage.setTitle("Вход - ReviewAnalytics");
         stage.setScene(scene);
+        stage.setOnCloseRequest(event -> {
+            Platform.exit();
+            System.exit(0);
+        });
         stage.show();
     }
 

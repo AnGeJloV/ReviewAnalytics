@@ -1,33 +1,95 @@
 <?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.net.*?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.chart.*?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
-<?import javafx.scene.text.Font?>
 
-<BorderPane xmlns="http://javafx.com/javafx"
-            xmlns:fx="http://javafx.com/fxml"
-            fx:controller="com.github.stasangelov.reviewanalytics.client.controller.MainController"
-            prefHeight="768.0" prefWidth="1024.0">
+<BorderPane prefHeight="800.0" prefWidth="1200.0" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.github.stasangelov.reviewanalytics.client.controller.MainController">
+    <stylesheets>
+        <URL value="@dashboard.css" />
+    </stylesheets>
     <top>
         <MenuBar>
             <menus>
                 <Menu text="Файл">
                     <items>
-                        <MenuItem text="Выход" onAction="#onLogout"/>
+                        <MenuItem onAction="#onLogout" text="Выход" />
                     </items>
                 </Menu>
                 <Menu fx:id="adminMenu" text="Управление">
                     <items>
-                        <MenuItem text="Администрирование" onAction="#onGoToAdminPanel"/>
+                        <MenuItem onAction="#onGoToAdminPanel" text="Администрирование" />
                     </items>
                 </Menu>
             </menus>
         </MenuBar>
     </top>
     <center>
-        <Label text="Главная панель управления (Dashboard)">
-            <font>
-                <Font size="24.0" />
-            </font>
-        </Label>
+        <!-- Основной контейнер с серым фоном -->
+        <VBox spacing="20.0" styleClass="dashboard-background">
+            <padding>
+                <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
+            </padding>
+            <children>
+                <!-- ЗАГОЛОВОК -->
+                <Label styleClass="dashboard-title" text="Информационная панель" />
+
+                <!-- СЕКЦИЯ KPI-КАРТОЧЕК (теперь в HBox) -->
+                <HBox spacing="20.0">
+                    <children>
+                        <VBox prefHeight="114.0" prefWidth="250.0" styleClass="kpi-card" HBox.hgrow="ALWAYS">
+                            <children>
+                                <Label styleClass="kpi-title" text="Всего отзывов" />
+                                <Label fx:id="totalReviewsLabel" styleClass="kpi-value" text="-" />
+                            </children>
+                        </VBox>
+                        <VBox styleClass="kpi-card" HBox.hgrow="ALWAYS">
+                            <children>
+                                <Label styleClass="kpi-title" text="Средний интегральный рейтинг" />
+                                <Label fx:id="avgRatingLabel" styleClass="kpi-value" text="-" />
+                            </children>
+                        </VBox>
+                        
+                    </children>
+                </HBox>
+
+                <!-- СЕКЦИЯ ГРАФИКОВ (в GridPane для разделения 50/50) -->
+                <GridPane hgap="20.0" VBox.vgrow="ALWAYS">
+                    <columnConstraints>
+                        <ColumnConstraints hgrow="SOMETIMES" percentWidth="50.0" />
+                        <ColumnConstraints hgrow="SOMETIMES" percentWidth="50.0" />
+                    </columnConstraints>
+                    <rowConstraints>
+                        <RowConstraints minHeight="10.0" vgrow="SOMETIMES" />
+                    </rowConstraints>
+                    <children>
+                        <VBox styleClass="chart-card">
+                            <children>
+                                <Label styleClass="chart-title" text="Топ-5 лучших товаров" />
+                                <BarChart fx:id="topProductsChart" animated="false" legendVisible="false" VBox.vgrow="ALWAYS">
+                                    <xAxis>
+                                        <NumberAxis side="BOTTOM"/>
+                                    </xAxis>
+                                    <yAxis><CategoryAxis side="LEFT" /></yAxis>
+                                </BarChart>
+                            </children>
+                        </VBox>
+                        <VBox styleClass="chart-card" GridPane.columnIndex="1">
+                            <children>
+                                <Label styleClass="chart-title" text="Топ-5 худших товаров" />
+                                <BarChart fx:id="worstProductsChart" animated="false" legendVisible="false" VBox.vgrow="ALWAYS">
+                                    <xAxis>
+                                        <NumberAxis side="BOTTOM" />
+                                    </xAxis>
+                                    <yAxis><CategoryAxis side="LEFT" /></yAxis>
+                                </BarChart>
+                            </children>
+                        </VBox>
+                    </children>
+                </GridPane>
+            </children>
+        </VBox>
     </center>
 </BorderPane>
