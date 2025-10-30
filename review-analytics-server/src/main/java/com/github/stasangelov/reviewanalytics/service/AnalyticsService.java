@@ -1,8 +1,6 @@
 package com.github.stasangelov.reviewanalytics.service;
 
-import com.github.stasangelov.reviewanalytics.dto.DashboardDto;
-import com.github.stasangelov.reviewanalytics.dto.KpiDto;
-import com.github.stasangelov.reviewanalytics.dto.TopProductDto;
+import com.github.stasangelov.reviewanalytics.dto.*;
 import com.github.stasangelov.reviewanalytics.entity.Review;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -13,9 +11,11 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -39,7 +39,131 @@ public class AnalyticsService {
         dashboard.setTopRatedProducts(findTopRatedProducts(5, "DESC", startDateTime, endDateTime, categoryId));
         dashboard.setWorstRatedProducts(findTopRatedProducts(5, "ASC", startDateTime, endDateTime, categoryId));
 
+        if (categoryId != null) {
+            // Если категория выбрана, считаем рейтинг по брендам ВНУТРИ нее
+            dashboard.setBrandRatings(calculateBrandRatings(startDateTime, endDateTime, categoryId));
+            dashboard.setCategoryRatings(null); // Обнуляем данные для другого графика
+        } else {
+            // Если категория не выбрана, считаем рейтинг по категориям
+            dashboard.setCategoryRatings(calculateCategoryRatings(startDateTime, endDateTime, null));
+            dashboard.setBrandRatings(null);
+        }
+        dashboard.setRatingDynamics(calculateRatingDynamics(startDateTime, endDateTime, categoryId));
+
         return dashboard;
+    }
+
+    /**
+     * НОВЫЙ МЕТОД: Рассчитывает средний рейтинг для каждого бренда в рамках одной категории.
+     */
+    private List<BrandRatingDto> calculateBrandRatings(LocalDateTime startDateTime, LocalDateTime endDateTime, Long categoryId) {
+        StringBuilder jpqlBuilder = new StringBuilder(
+                "SELECT NEW com.github.stasangelov.reviewanalytics.dto.BrandRatingDto(" +
+                        "   r.product.brand, " +
+                        "   AVG(r.integralRating)" +
+                        ") " +
+                        "FROM Review r WHERE r.status = :status"
+        );
+        Map<String, Object> parameters = new HashMap<>();
+        parameters.put("status", Review.ReviewStatus.ACTIVE);
+
+        // Применяем все фильтры, включая обязательный categoryId
+        addQueryFilters(jpqlBuilder, parameters, startDateTime, endDateTime, categoryId);
+
+        jpqlBuilder.append(" GROUP BY r.product.brand ORDER BY AVG(r.integralRating) DESC");
+
+        TypedQuery<BrandRatingDto> query = entityManager.createQuery(jpqlBuilder.toString(), BrandRatingDto.class);
+        parameters.forEach(query::setParameter);
+
+        return query.getResultList();
+    }
+
+    /**
+     * Рассчитывает средний рейтинг для каждой категории.
+     */
+    private List<CategoryRatingDto> calculateCategoryRatings(LocalDateTime startDateTime, LocalDateTime endDateTime, Long categoryId) {
+        StringBuilder jpqlBuilder = new StringBuilder(
+                "SELECT NEW com.github.stasangelov.reviewanalytics.dto.CategoryRatingDto(" +
+                        "   r.product.category.name, " +
+                        "   AVG(r.integralRating)" +
+                        ") " +
+                        "FROM Review r WHERE r.status = :status"
+        );
+        Map<String, Object> parameters = new HashMap<>();
+        parameters.put("status", Review.ReviewStatus.ACTIVE);
+
+        addQueryFilters(jpqlBuilder, parameters, startDateTime, endDateTime, categoryId);
+
+        jpqlBuilder.append(" GROUP BY r.product.category.name ORDER BY AVG(r.integralRating) DESC");
+
+        TypedQuery<CategoryRatingDto> query = entityManager.createQuery(jpqlBuilder.toString(), CategoryRatingDto.class);
+        parameters.forEach(query::setParameter);
+
+        return query.getResultList();
+    }
+
+    /**
+     * Рассчитывает динамику среднего рейтинга с АДАПТИВНОЙ гранулярностью (день/неделя/месяц)
+     * в зависимости от выбранного периода.
+     */
+    private List<RatingDynamicDto> calculateRatingDynamics(LocalDateTime startDateTime, LocalDateTime endDateTime, Long categoryId) {
+        // 1. Определяем длительность периода
+        long daysBetween = 90; // Значение по умолчанию, если даты не заданы
+        if (startDateTime != null && endDateTime != null) {
+            daysBetween = ChronoUnit.DAYS.between(startDateTime, endDateTime);
+        }
+
+        // 2. Выбираем, как будем группировать дату (гранулярность)
+        String dateGroupingSql;
+        if (daysBetween <= 15) {
+            // Группировка по ДНЯМ
+            dateGroupingSql = "CAST(r.date_created AS DATE)";
+        } else if (daysBetween <= 60) {
+            // Группировка по НЕДЕЛЯМ (ISO week format)
+            dateGroupingSql = "STR_TO_DATE(CONCAT(YEAR(r.date_created), '-', WEEK(r.date_created, 1), '-1'), '%Y-%U-%w')";
+        } else {
+            // Группировка по МЕСЯЦАМ
+            dateGroupingSql = "STR_TO_DATE(CONCAT(YEAR(r.date_created), '-', MONTH(r.date_created), '-01'), '%Y-%m-%d')";
+        }
+
+        // 3. Строим SQL-запрос с выбранной группировкой
+        StringBuilder sqlBuilder = new StringBuilder(
+                "SELECT " + dateGroupingSql + " as group_date, AVG(r.integral_rating) as avg_rating " +
+                        "FROM reviews r JOIN products p ON r.product_id = p.id " +
+                        "WHERE r.status = 'ACTIVE'"
+        );
+        Map<String, Object> parameters = new HashMap<>();
+
+        // Добавляем фильтры
+        if (startDateTime != null) {
+            sqlBuilder.append(" AND r.date_created >= :startDate");
+            parameters.put("startDate", startDateTime);
+        }
+        if (endDateTime != null) {
+            sqlBuilder.append(" AND r.date_created < :endDate");
+            parameters.put("endDate", endDateTime);
+        }
+        if (categoryId != null) {
+            sqlBuilder.append(" AND p.category_id = :categoryId");
+            parameters.put("categoryId", categoryId);
+        }
+
+        // Группируем и сортируем по вычисленной дате
+        sqlBuilder.append(" GROUP BY group_date ORDER BY group_date ASC");
+
+        // 4. Выполняем запрос и преобразуем результат
+        List<Object[]> results = entityManager.createNativeQuery(sqlBuilder.toString())
+                .unwrap(org.hibernate.query.Query.class)
+                .setProperties(parameters)
+                .getResultList();
+
+        return results.stream()
+                .map(row -> new RatingDynamicDto(
+                        ((java.sql.Date) row[0]).toLocalDate(),
+                        ((Number) row[1]).doubleValue()
+                ))
+                .collect(Collectors.toList());
+
     }
 
     /**
@@ -101,7 +225,7 @@ public class AnalyticsService {
         // Добавляем те же самые фильтры
         addQueryFilters(jpqlBuilder, parameters, startDateTime, endDateTime, categoryId);
 
-        jpqlBuilder.append(" GROUP BY r.product.id, r.product.name HAVING COUNT(r) >= 5 ORDER BY avg_rating ").append(direction);
+        jpqlBuilder.append(" GROUP BY r.product.id, r.product.name ORDER BY avg_rating ").append(direction);
 
         TypedQuery<TopProductDto> query = entityManager.createQuery(jpqlBuilder.toString(), TopProductDto.class);
         parameters.forEach(query::setParameter);

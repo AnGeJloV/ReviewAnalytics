@@ -8,5 +8,7 @@ public class DashboardDto {
     private KpiDto kpis;
     private List<TopProductDto> topRatedProducts;
     private List<TopProductDto> worstRatedProducts;
-    // TODO: Добавить поля для других графиков (сравнение категорий, динамика)
+    private List<CategoryRatingDto> categoryRatings;
+    private List<RatingDynamicDto> ratingDynamics;
+    private List<BrandRatingDto> brandRatings;
 }

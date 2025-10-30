@@ -72,3 +72,21 @@
 #worstProductsChart .data2.chart-bar { -fx-bar-fill: #BDBDBD; }
 #worstProductsChart .data1.chart-bar { -fx-bar-fill: #A9A9A9; }
 #worstProductsChart .data0.chart-bar { -fx-bar-fill: #8D8D8D; } /* Самый "темный" из светлых */
+
+/* --- НОВЫЕ СТИЛИ для графика категорий --- */
+#categoryChart .chart-bar {
+    -fx-bar-fill: #333333; /* Ваш темно-серый цвет */
+}
+
+/* --- НОВЫЕ СТИЛИ для графика динамики --- */
+/* Цвет линии */
+#dynamicsChart .chart-series-line {
+    -fx-stroke: #333333;
+    -fx-stroke-width: 2px;
+}
+/* Цвет точек на линии */
+#dynamicsChart .chart-line-symbol {
+    -fx-background-color: #333333, white;
+    -fx-background-insets: 0, 2;
+    -fx-padding: 3px;
+}

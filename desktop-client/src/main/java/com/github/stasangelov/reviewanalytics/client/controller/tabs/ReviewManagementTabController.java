@@ -87,18 +87,11 @@ public class ReviewManagementTabController {
 
                 String lowerCaseFilter = newValue.toLowerCase();
 
-                // Проверяем, содержит ли название товара поисковый запрос.
-                // Дополнительно проверяем, что productName не null, чтобы избежать ошибок.
                 if (review.getProductName() != null && review.getProductName().toLowerCase().contains(lowerCaseFilter)) {
                     return true;
                 }
 
-                // Можно добавить поиск по другим полям, например, по статусу
-                // if (review.getStatus() != null && review.getStatus().toLowerCase().contains(lowerCaseFilter)) {
-                //     return true;
-                // }
-
-                return false; // Не найдено совпадений.
+                return false;
             });
         });
 

@@ -1,13 +1,13 @@
 package com.github.stasangelov.reviewanalytics.client.controller;
 
-import com.github.stasangelov.reviewanalytics.client.model.CategoryDto;
-import com.github.stasangelov.reviewanalytics.client.model.DashboardDto;
-import com.github.stasangelov.reviewanalytics.client.model.KpiDto;
-import com.github.stasangelov.reviewanalytics.client.model.TopProductDto;
+import com.github.stasangelov.reviewanalytics.client.model.*;
 import com.github.stasangelov.reviewanalytics.client.service.AnalyticsService;
 import com.github.stasangelov.reviewanalytics.client.service.DictionaryService;
 import com.github.stasangelov.reviewanalytics.client.service.SessionManager;
 import com.github.stasangelov.reviewanalytics.client.util.ViewSwitcher;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
+import javafx.scene.chart.LineChart;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -18,27 +18,34 @@ import javafx.scene.chart.XYChart;
 import javafx.scene.control.*;
 import javafx.scene.paint.Color;
 import javafx.scene.Group;
-import javafx.scene.Parent;
 import javafx.scene.text.Text;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
+import javafx.util.Duration;
 import javafx.util.StringConverter;
 
 import java.io.IOException;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
 public class MainController {
 
-    @FXML
-    private Menu adminMenu;
+    // --- Элементы меню ---
+    @FXML private Menu adminMenu;
 
+    // --- Элементы дашборда ---
     @FXML private Label totalReviewsLabel;
     @FXML private Label avgRatingLabel;
     @FXML private BarChart<Number, String> topProductsChart;
     @FXML private BarChart<Number, String> worstProductsChart;
+    @FXML private BarChart<String, Number> categoryChart;
+    @FXML private LineChart<String, Number> dynamicsChart;
+    @FXML private Label categoryChartTitle;
 
+    // --- Элементы фильтров ---
     @FXML private DatePicker startDatePicker;
     @FXML private DatePicker endDatePicker;
     @FXML private ComboBox<CategoryDto> categoryComboBox;
@@ -52,12 +59,10 @@ public class MainController {
      */
     @FXML
     public void initialize() {
-        // Настраиваем видимость меню в зависимости от роли
         if (!SessionManager.getInstance().hasRole("ADMIN")) {
             adminMenu.setVisible(false);
         }
-        setupCategoryFilter(); // Настраиваем ComboBox
-        // Запускаем загрузку аналитических данных
+        setupCategoryFilter();
         loadDashboardData();
     }
 
@@ -65,25 +70,21 @@ public class MainController {
      * Настраивает ComboBox для категорий: загружает данные и устанавливает, как их отображать.
      */
     private void setupCategoryFilter() {
-        // Настраиваем, чтобы в списке отображалось имя категории
         categoryComboBox.setConverter(new StringConverter<>() {
             @Override
             public String toString(CategoryDto category) {
                 return category == null ? "Все категории" : category.getName();
             }
             @Override
-            public CategoryDto fromString(String string) {
-                return null;
-            }
+            public CategoryDto fromString(String string) { return null; }
         });
 
-        // Загружаем категории с сервера в фоновом потоке
         new Thread(() -> {
             try {
                 final List<CategoryDto> categories = dictionaryService.getAllCategories();
                 Platform.runLater(() -> categoryComboBox.getItems().addAll(categories));
             } catch (IOException e) {
-                e.printStackTrace(); // TODO: Показать Alert
+                e.printStackTrace();
             }
         }).start();
     }
@@ -113,7 +114,6 @@ public class MainController {
      * Асинхронно загружает данные с сервера и обновляет UI.
      */
     private void loadDashboardData() {
-
         LocalDate startDate = startDatePicker.getValue();
         LocalDate endDate = endDatePicker.getValue();
         CategoryDto selectedCategory = categoryComboBox.getSelectionModel().getSelectedItem();
@@ -126,6 +126,14 @@ public class MainController {
                     updateKpis(dashboardData.getKpis());
                     updateTopProductsChart(topProductsChart, dashboardData.getTopRatedProducts(), "Лучшие");
                     updateTopProductsChart(worstProductsChart, dashboardData.getWorstRatedProducts(), "Худшие");
+                    if (categoryId != null) {
+                        // Если был фильтр по категории, показываем бренды
+                        updateBrandChart(dashboardData.getBrandRatings());
+                    } else {
+                        // Иначе показываем категории
+                        updateCategoryChart(dashboardData.getCategoryRatings());
+                    }
+                    updateDynamicsChart(dashboardData.getRatingDynamics());
                 });
             } catch (IOException e) {
                 Platform.runLater(() -> {
@@ -140,29 +148,103 @@ public class MainController {
         }).start();
     }
 
-    private void updateTopProductsChart(BarChart<Number, String> chart, List<TopProductDto> data, String seriesName) {
+    /**
+     * Обновляет график сравнения категорий с динамической осью Y.
+     */
+    private void updateCategoryChart(List<CategoryRatingDto> data) {
+        categoryChartTitle.setText("Средний рейтинг по категориям");
+        categoryChart.getData().clear();
+        if (data == null || data.isEmpty()) return;
 
-        // Сначала полностью очищаем график от старых данных
+        NumberAxis yAxis = (NumberAxis) categoryChart.getYAxis();
+        double min = data.stream().mapToDouble(CategoryRatingDto::getAverageRating).min().orElse(0.0);
+        double max = data.stream().mapToDouble(CategoryRatingDto::getAverageRating).max().orElse(5.0);
+
+        yAxis.setAutoRanging(false);
+        yAxis.setLowerBound(Math.floor(min - 0.5));
+        yAxis.setUpperBound(Math.ceil(max));
+        yAxis.setTickUnit(0.5);
+
+        XYChart.Series<String, Number> series = new XYChart.Series<>();
+        for (CategoryRatingDto categoryRating : data) {
+            series.getData().add(new XYChart.Data<>(categoryRating.getCategoryName(), categoryRating.getAverageRating()));
+        }
+        categoryChart.getData().add(series);
+    }
+
+    /**
+     * НОВЫЙ МЕТОД: Обновляет тот же самый график, но данными по брендам.
+     */
+    private void updateBrandChart(List<BrandRatingDto> data) {
+        categoryChartTitle.setText("Средний рейтинг по брендам");
+        categoryChart.getData().clear();
+        if (data == null || data.isEmpty()) return;
+
+        // Настраиваем ось Y
+        NumberAxis yAxis = (NumberAxis) categoryChart.getYAxis();
+        double min = data.stream().mapToDouble(BrandRatingDto::getAverageRating).min().orElse(0.0);
+        double max = data.stream().mapToDouble(BrandRatingDto::getAverageRating).max().orElse(5.0);
+
+        yAxis.setAutoRanging(false);
+        yAxis.setLowerBound(Math.floor(min - 0.5));
+        yAxis.setUpperBound(Math.ceil(max));
+        yAxis.setTickUnit(0.5);
+
+        XYChart.Series<String, Number> series = new XYChart.Series<>();
+        for (BrandRatingDto item : data) {
+            series.getData().add(new XYChart.Data<>(item.getBrandName(), item.getAverageRating()));
+        }
+        categoryChart.getData().add(series);
+    }
+
+    /**
+     * Обновляет график динамики рейтинга с динамической осью Y.
+     */
+    private void updateDynamicsChart(List<RatingDynamicDto> data) {
+        dynamicsChart.getData().clear();
+        if (data == null || data.isEmpty()) return;
+
+        NumberAxis yAxis = (NumberAxis) dynamicsChart.getYAxis();
+        double min = data.stream().mapToDouble(RatingDynamicDto::getAverageRating).min().orElse(0.0);
+        double max = data.stream().mapToDouble(RatingDynamicDto::getAverageRating).max().orElse(5.0);
+
+        yAxis.setAutoRanging(false);
+        yAxis.setLowerBound(Math.floor(min - 0.5));
+        yAxis.setUpperBound(Math.ceil(max));
+        yAxis.setTickUnit(0.5);
+
+        XYChart.Series<String, Number> series = new XYChart.Series<>();
+
+        DateTimeFormatter formatter;
+        if (data.size() > 31) { // Если точек много, скорее всего это дни за несколько месяцев
+            formatter = DateTimeFormatter.ofPattern("dd.MM");
+        } else { // Если точек мало, это недели или месяцы, покажем месяц
+            formatter = DateTimeFormatter.ofPattern("dd.MM.yy");
+        }
+
+
+        for (RatingDynamicDto dynamic : data) {
+            series.getData().add(new XYChart.Data<>(dynamic.getDate().format(formatter), dynamic.getAverageRating()));
+        }
+        dynamicsChart.getData().add(series);
+    }
+
+    private void updateTopProductsChart(BarChart<Number, String> chart, List<TopProductDto> data, String seriesName) {
         chart.getData().clear();
 
         if (data == null || data.isEmpty()) {
-            return; // Если данных нет, выходим
+            return;
         }
 
-        // Получаем доступ к оси X
         NumberAxis xAxis = (NumberAxis) chart.getXAxis();
-
-        // 1. Находим минимальное и максимальное значения
         double min = data.stream().mapToDouble(TopProductDto::getAverageRating).min().orElse(0.0);
         double max = data.stream().mapToDouble(TopProductDto::getAverageRating).max().orElse(5.0);
 
-        // 2. Устанавливаем границы и цену деления
-        xAxis.setAutoRanging(false); // Отключаем автоматику
+        xAxis.setAutoRanging(false);
         xAxis.setLowerBound(Math.floor(min - 0.5));
         xAxis.setUpperBound(Math.ceil(max));
         xAxis.setTickUnit(0.5);
 
-        // 3. Создаем и наполняем серию данных
         XYChart.Series<Number, String> series = new XYChart.Series<>();
         series.setName(seriesName);
 
@@ -172,57 +254,19 @@ public class MainController {
             series.getData().add(new XYChart.Data<>(product.getAverageRating(), product.getProductName()));
         }
 
-        // 4. И только теперь добавляем готовую серию в график
         chart.getData().add(series);
-
-        addBarLabels(chart);
-    }
-
-    private void addBarLabels(BarChart<Number, String> chart) {
-        // Этот код нужно выполнить чуть позже, чтобы JavaFX успел отрисовать столбцы.
-        Platform.runLater(() -> {
-            for (XYChart.Series<Number, String> series : chart.getData()) {
-                for (XYChart.Data<Number, String> data : series.getData()) {
-                    Node node = data.getNode();
-                    if (node != null) {
-                        // Создаем текстовый узел (Text) с отформатированным значением
-                        Text text = new Text(String.format("%.2f", data.getXValue().doubleValue()));
-                        text.setFont(new Font(10));
-                        text.setFill(Color.web("#333333")); // Ваш темно-серый цвет
-
-                        // Оборачиваем узел-столбец в Group, чтобы можно было добавить текст рядом
-                        Parent parent = node.getParent();
-                        if (parent instanceof Group) {
-                            Group group = (Group) parent;
-
-                            // Вычисляем позицию для текста:
-                            // правый край столбца + небольшой отступ
-                            double x = node.getBoundsInParent().getMaxX() + 5;
-                            // вертикальный центр столбца
-                            double y = node.getBoundsInParent().getMinY() + node.getBoundsInParent().getHeight() / 2;
-
-                            text.setX(x);
-                            text.setY(y);
-
-                            // Устанавливаем вертикальное выравнивание текста по центру
-                            text.setTextOrigin(javafx.geometry.VPos.CENTER);
-
-                            // Добавляем текст в ту же группу, где лежит столбец
-                            group.getChildren().add(text);
-                        }
-                    }
-                }
-            }
-        });
     }
 
     /**
      * Обновляет карточки с ключевыми показателями.
      */
-    private void updateKpis(com.github.stasangelov.reviewanalytics.client.model.KpiDto kpis) {
+    private void updateKpis(KpiDto kpis) {
         if (kpis != null) {
             totalReviewsLabel.setText(String.valueOf(kpis.getTotalReviews()));
             avgRatingLabel.setText(String.format("%.2f", kpis.getAverageIntegralRating()));
+        } else {
+            totalReviewsLabel.setText("0");
+            avgRatingLabel.setText("0.00");
         }
     }
 
@@ -244,15 +288,8 @@ public class MainController {
      */
     @FXML
     void onLogout(ActionEvent event) {
-        // Очищаем данные сессии
         SessionManager.getInstance().clearSession();
-
-        // --- ИСПРАВЛЕНИЕ ЗДЕСЬ ---
-        // Получаем текущее окно (Stage) через любой Node на сцене, например, totalReviewsLabel
         Stage currentStage = (Stage) totalReviewsLabel.getScene().getWindow();
-
-        // Вызываем новый, более надежный метод для смены сцены
         ViewSwitcher.switchScene(currentStage, "login-view.fxml");
-        // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
     }
 }

@@ -10,4 +10,7 @@ public class DashboardDto {
     private KpiDto kpis;
     private List<TopProductDto> topRatedProducts;
     private List<TopProductDto> worstRatedProducts;
+    private List<CategoryRatingDto> categoryRatings;
+    private List<RatingDynamicDto> ratingDynamics;
+    private List<BrandRatingDto> brandRatings;
 }
