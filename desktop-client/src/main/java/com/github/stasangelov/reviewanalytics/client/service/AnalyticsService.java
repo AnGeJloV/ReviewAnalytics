@@ -216,4 +216,36 @@ public class AnalyticsService {
         }
     }
 
+    public byte[] getComparisonPdf(List<Long> productIds, Map<String, byte[]> images) throws IOException {
+        String url = BASE_URL + "/compare/export-pdf";
+        String productIdsJson = objectMapper.writeValueAsString(productIds);
+
+        MultipartBody.Builder requestBodyBuilder = new MultipartBody.Builder()
+                .setType(MultipartBody.FORM)
+                .addFormDataPart("productIds", productIdsJson);
+
+        // Добавляем все изображения из Map в запрос
+        for (Map.Entry<String, byte[]> entry : images.entrySet()) {
+            requestBodyBuilder.addFormDataPart(
+                    "charts", // Имя параметра должно быть одинаковым для всех файлов
+                    entry.getKey(), // Имя файла, например "comparisonTable.png"
+                    RequestBody.create(entry.getValue(), PNG)
+            );
+        }
+
+        Request request = new Request.Builder()
+                .url(url)
+                .post(requestBodyBuilder.build())
+                .build();
+
+        try (Response response = client.newCall(request).execute()) {
+            if (response.isSuccessful()) {
+                return response.body().bytes();
+            } else {
+                handleError(response);
+                return null;
+            }
+        }
+    }
+
 }

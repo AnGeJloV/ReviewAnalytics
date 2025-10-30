@@ -14,8 +14,10 @@
         <Insets bottom="15.0" left="15.0" right="15.0" top="15.0" />
     </padding>
     <children>
-        <HBox alignment="CENTER">
+        <HBox alignment="CENTER_LEFT" spacing="20">
             <Label styleClass="dashboard-title" text="Сравнительный анализ товаров" />
+            <Region HBox.hgrow="ALWAYS" />
+            <Button onAction="#exportComparisonToPdf" text="Экспорт в PDF" />
         </HBox>
         <VBox styleClass="chart-card">
             <children>
@@ -27,7 +29,7 @@
                 </TableView>
             </children>
         </VBox>
-        <VBox styleClass="chart-card" VBox.vgrow="ALWAYS">
+        <VBox fx:id="areaChartContainer" styleClass="chart-card" VBox.vgrow="ALWAYS">
             <children>
                 <Label styleClass="chart-title" text="Визуализация профилей" />
                 <AreaChart fx:id="comparisonChart" legendVisible="false" VBox.vgrow="ALWAYS">

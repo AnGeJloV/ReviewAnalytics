@@ -10,6 +10,7 @@ import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.embed.swing.SwingFXUtils;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
 import javafx.scene.chart.AreaChart;
@@ -34,11 +35,31 @@ import javafx.scene.layout.HBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 
+import com.github.stasangelov.reviewanalytics.client.model.ProductSummaryDto;
+import javafx.event.ActionEvent;
+import javafx.fxml.FXML;
+import javafx.scene.Node;
+import javafx.scene.SnapshotParameters;
+import javafx.scene.control.Alert;
+import javafx.scene.image.WritableImage;
+import javafx.scene.layout.VBox;
+import javafx.stage.FileChooser;
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.util.List;
+import java.util.stream.Collectors;
+import javafx.application.Platform;
+
 public class ComparisonController {
 
     @FXML private AreaChart<String, Number> comparisonChart;
     @FXML private TableView<Map<String, Object>> comparisonTable;
     @FXML private FlowPane customLegendPane;
+    @FXML private VBox areaChartContainer;
 
     private final AnalyticsService analyticsService = new AnalyticsService();
 
@@ -248,5 +269,74 @@ public class ComparisonController {
             tableData.add(row);
         }
         comparisonTable.setItems(tableData);
+    }
+
+    @FXML
+    void exportComparisonToPdf(ActionEvent event) {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Сохранить отчет по сравнению");
+        fileChooser.setInitialFileName("comparison_report.pdf");
+        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("PDF Documents", "*.pdf"));
+        File file = fileChooser.showSaveDialog(areaChartContainer.getScene().getWindow());
+
+        if (file != null) {
+            List<Long> productIds = ComparisonService.getInstance().getItemsToCompare().stream()
+                    .map(ProductSummaryDto::getProductId)
+                    .collect(Collectors.toList());
+
+            if (productIds.isEmpty()) {
+                new Alert(Alert.AlertType.WARNING, "Нет товаров для сравнения.").showAndWait();
+                return;
+            }
+
+            try {
+                // --- НАЧАЛО ИЗМЕНЕНИЙ ---
+
+                // Создаем Map для хранения всех снимков
+                Map<String, byte[]> images = new HashMap<>();
+                // Делаем снимок контейнера с графиком и легендой
+                images.put("comparisonChart.png", snapshotNode(areaChartContainer));
+                // Делаем снимок таблицы
+                images.put("comparisonTable.png", snapshotNode(comparisonTable));
+
+                new Thread(() -> {
+                    try {
+                        // Передаем в сервис всю Map с изображениями
+                        byte[] pdfData = analyticsService.getComparisonPdf(productIds, images);
+                        Files.write(file.toPath(), pdfData);
+
+                        Platform.runLater(() -> {
+                            new Alert(Alert.AlertType.INFORMATION, "Отчет успешно сохранен: " + file.getAbsolutePath()).showAndWait();
+                        });
+                    } catch (IOException e) {
+                        Platform.runLater(() -> {
+                            new Alert(Alert.AlertType.ERROR, "Не удалось сформировать или сохранить отчет: " + e.getMessage()).showAndWait();
+                        });
+                        e.printStackTrace();
+                    }
+                }).start();
+
+                // --- КОНЕЦ ИЗМЕНЕНИЙ ---
+
+            } catch (IOException e) {
+                new Alert(Alert.AlertType.ERROR, "Не удалось сделать снимок: " + e.getMessage()).showAndWait();
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private byte[] snapshotNode(Node node) throws IOException {
+        WritableImage image = node.snapshot(new SnapshotParameters(), null);
+
+        BufferedImage bufferedImage = SwingFXUtils.fromFXImage(image, null);
+        BufferedImage imageWithBackground = new BufferedImage(bufferedImage.getWidth(), bufferedImage.getHeight(), BufferedImage.TYPE_INT_RGB);
+        imageWithBackground.getGraphics().setColor(java.awt.Color.WHITE);
+        imageWithBackground.getGraphics().fillRect(0, 0, bufferedImage.getWidth(), bufferedImage.getHeight());
+        imageWithBackground.getGraphics().drawImage(bufferedImage, 0, 0, null);
+
+        try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+            ImageIO.write(imageWithBackground, "png", outputStream);
+            return outputStream.toByteArray();
+        }
     }
 }

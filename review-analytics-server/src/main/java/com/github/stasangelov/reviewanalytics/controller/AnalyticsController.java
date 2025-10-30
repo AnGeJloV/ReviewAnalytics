@@ -1,5 +1,6 @@
 package com.github.stasangelov.reviewanalytics.controller;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.stasangelov.reviewanalytics.dto.DashboardDto;
 import com.github.stasangelov.reviewanalytics.service.AnalyticsService;
@@ -140,6 +141,36 @@ public class AnalyticsController {
         headers.setContentType(MediaType.APPLICATION_PDF);
         String fileName = "product_report_" + productId + ".pdf";
         headers.setContentDispositionFormData("attachment", fileName);
+        headers.setContentLength(pdfContents.length);
+
+        return new ResponseEntity<>(pdfContents, headers, HttpStatus.OK);
+    }
+
+    @PostMapping("/compare/export-pdf")
+    public ResponseEntity<byte[]> exportComparisonPdf(
+            @RequestPart("productIds") String productIdsJson,
+            @RequestPart("charts") MultipartFile[] charts // Принимаем массив файлов
+    ) throws IOException {
+
+        List<Long> productIds = objectMapper.readValue(productIdsJson, new TypeReference<List<Long>>() {});
+        if (productIds == null || productIds.isEmpty()) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        List<ComparisonDataDto> comparisonData = analyticsService.getComparisonData(productIds);
+
+        // Преобразуем массив файлов в удобную Map
+        Map<String, byte[]> chartImages = new HashMap<>();
+        for (MultipartFile chart : charts) {
+            chartImages.put(chart.getOriginalFilename(), chart.getBytes());
+        }
+
+        // Передаем в сервис и данные, и Map с изображениями
+        byte[] pdfContents = pdfGenerationService.generateComparisonPdf(comparisonData, chartImages);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_PDF);
+        headers.setContentDispositionFormData("attachment", "comparison_report.pdf");
         headers.setContentLength(pdfContents.length);
 
         return new ResponseEntity<>(pdfContents, headers, HttpStatus.OK);

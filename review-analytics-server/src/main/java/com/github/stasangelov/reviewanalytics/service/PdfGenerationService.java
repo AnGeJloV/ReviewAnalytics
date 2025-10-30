@@ -351,5 +351,59 @@ public class PdfGenerationService {
             drawTable(document, contentStream, 50, 550, "Список отзывов по товару", headers, tableData, colWidths);
         }
     }
-    public byte[] generateComparisonPdf(List<ComparisonDataDto> data) { return new byte[0]; }
+    public byte[] generateComparisonPdf(List<ComparisonDataDto> data, Map<String, byte[]> images) throws IOException {
+        try (PDDocument document = new PDDocument()) {
+            loadFonts(document);
+
+            PDPage chartPage = new PDPage(PDRectangle.A4);
+            document.addPage(chartPage);
+            try (PDPageContentStream contentStream = new PDPageContentStream(document, chartPage)) {
+                float yPosition = 750;
+                final float margin = 50;
+
+                addText(contentStream, fontBold, 18, margin, yPosition, "Отчет: Сравнительный анализ товаров");
+                yPosition -= 15;
+                String reportDate = LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm"));
+                addText(contentStream, font, 10, margin, yPosition, "Дата формирования: " + reportDate);
+                yPosition -= 30;
+
+                addText(contentStream, fontBold, 14, margin, yPosition, "Визуализация профилей");
+                yPosition -= 15;
+
+                byte[] chartImage = images.get("comparisonChart.png");
+                PDImageXObject pdImage = PDImageXObject.createFromByteArray(document, chartImage, "comparison_chart");
+                float pageWidth = chartPage.getMediaBox().getWidth() - 2 * margin;
+                float scale = pageWidth / pdImage.getWidth();
+                float imgWidth = pdImage.getWidth() * scale;
+                float imgHeight = pdImage.getHeight() * scale;
+                contentStream.drawImage(pdImage, margin, yPosition - imgHeight, imgWidth, imgHeight);
+            }
+
+            byte[] tableImage = images.get("comparisonTable.png");
+            if (tableImage != null) {
+                // Создаем альбомную страницу для таблицы
+                PDPage tablePage = new PDPage(new PDRectangle(PDRectangle.A4.getHeight(), PDRectangle.A4.getWidth()));
+                document.addPage(tablePage);
+                try (PDPageContentStream contentStream = new PDPageContentStream(document, tablePage)) {
+                    float yPosition = 550;
+                    final float margin = 50;
+
+                    addText(contentStream, fontBold, 14, margin, yPosition, "Сравнение по критериям");
+                    yPosition -= 15;
+
+                    PDImageXObject pdTableImage = PDImageXObject.createFromByteArray(document, tableImage, "comparison_table");
+                    float pageWidth = tablePage.getMediaBox().getWidth() - 2 * margin;
+                    float scale = pageWidth / pdTableImage.getWidth();
+                    float imgWidth = pdTableImage.getWidth() * scale;
+                    float imgHeight = pdTableImage.getHeight() * scale;
+                    contentStream.drawImage(pdTableImage, margin, yPosition - imgHeight, imgWidth, imgHeight);
+                }
+            }
+
+            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+            document.save(byteArrayOutputStream);
+            return byteArrayOutputStream.toByteArray();
+        }
+    }
+
 }
