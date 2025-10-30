@@ -20,6 +20,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import com.github.stasangelov.reviewanalytics.dto.ComparisonDataDto;
+import com.github.stasangelov.reviewanalytics.entity.Product;
 
 @Service
 @RequiredArgsConstructor
@@ -385,5 +387,42 @@ public class AnalyticsService {
         parameters.forEach(query::setParameter);
 
         return query.setMaxResults(limit).getResultList();
+    }
+    /**
+     * НОВЫЙ МЕТОД: Собирает данные для сравнения нескольких товаров.
+     * @param productIds Список ID товаров для сравнения.
+     * @return Список DTO, где каждый элемент содержит профиль одного товара.
+     */
+    public List<ComparisonDataDto> getComparisonData(List<Long> productIds) {
+        return productIds.stream()
+                .map(this::getProductProfileForComparison)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Вспомогательный метод для получения профиля одного товара.
+     */
+    private ComparisonDataDto getProductProfileForComparison(Long productId) {
+        Product product = entityManager.find(Product.class, productId);
+        if (product == null) {
+            throw new ResourceNotFoundException("Товар с id " + productId + " не найден");
+        }
+
+        String jpql = "SELECT NEW com.github.stasangelov.reviewanalytics.dto.CriteriaProfileDto(" +
+                "   rr.criterion.name, AVG(rr.rating)" +
+                ") " +
+                "FROM ReviewRating rr JOIN rr.review r " +
+                "WHERE r.product.id = :productId AND r.status = 'ACTIVE' " +
+                "GROUP BY rr.criterion.name";
+
+        List<CriteriaProfileDto> profile = entityManager.createQuery(jpql, CriteriaProfileDto.class)
+                .setParameter("productId", productId)
+                .getResultList();
+
+        ComparisonDataDto dto = new ComparisonDataDto();
+        dto.setProductId(productId);
+        dto.setProductName(product.getName());
+        dto.setCriteriaProfile(profile);
+        return dto;
     }
 }

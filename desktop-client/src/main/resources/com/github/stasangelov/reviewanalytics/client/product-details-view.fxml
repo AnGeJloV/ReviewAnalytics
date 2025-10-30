@@ -15,7 +15,11 @@
     </padding>
     <children>
         <!-- ЗАГОЛОВОК -->
-        <Label fx:id="productNameLabel" styleClass="dashboard-title" text="Название товара..." />
+        <HBox alignment="CENTER_LEFT" spacing="20">
+            <Label fx:id="productNameLabel" styleClass="dashboard-title" text="Название товара..." />
+            <Region HBox.hgrow="ALWAYS" />
+            <CheckBox fx:id="compareCheckBox" onAction="#handleToggleCompare" text="Добавить к сравнению" />
+        </HBox>
 
         <!-- СЕКЦИЯ KPI -->
         <HBox spacing="20.0">

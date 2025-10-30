@@ -8,11 +8,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.*;
+import com.github.stasangelov.reviewanalytics.dto.ComparisonDataDto;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -59,5 +56,16 @@ public class AnalyticsController {
     @GetMapping("/product/{productId}")
     public ResponseEntity<ProductDetailsDto> getProductDetails(@PathVariable Long productId) {
         return ResponseEntity.ok(analyticsService.getProductDetails(productId));
+    }
+    /**
+     * НОВЫЙ ЭНДПОИНТ: Принимает список ID и возвращает данные для сравнения.
+     * Используем POST, так как передача списка ID в GET-запросе может быть неудобной.
+     */
+    @PostMapping("/compare")
+    public ResponseEntity<List<ComparisonDataDto>> getComparisonData(@RequestBody List<Long> productIds) {
+        if (productIds == null || productIds.isEmpty()) {
+            return ResponseEntity.badRequest().build();
+        }
+        return ResponseEntity.ok(analyticsService.getComparisonData(productIds));
     }
 }

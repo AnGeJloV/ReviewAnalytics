@@ -5,7 +5,6 @@
 <?import javafx.scene.chart.*?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
-<?import javafx.scene.control.ScrollPane?>
 
 <BorderPane prefHeight="800.0" prefWidth="1200.0" xmlns="http://javafx.com/javafx/17.0.12"
             xmlns:fx="http://javafx.com/fxml/1"
@@ -15,18 +14,19 @@
     </stylesheets>
     <top>
         <MenuBar>
-            <menus>
-                <Menu text="Файл">
-                    <items>
-                        <MenuItem onAction="#onLogout" text="Выход"/>
-                    </items>
-                </Menu>
-                <Menu fx:id="adminMenu" text="Управление">
-                    <items>
-                        <MenuItem onAction="#onGoToAdminPanel" text="Администрирование"/>
-                    </items>
-                </Menu>
-            </menus>
+            <Menu text="Файл">
+                <items>
+                    <MenuItem onAction="#onLogout" text="Выход"/>
+                </items>
+            </Menu>
+            <Menu fx:id="adminMenu" text="Управление">
+                <items>
+                    <MenuItem onAction="#onGoToAdminPanel" text="Управление отзывами"/>
+                </items>
+            </Menu>
+            <Menu text="Аналитика">
+                <MenuItem onAction="#onGoToComparison" text="Сравнение товаров"/>
+            </Menu>
         </MenuBar>
     </top>
     <center>
@@ -201,6 +201,7 @@
                                         <TableColumn fx:id="brandCol" prefWidth="150.0" text="Бренд" />
                                         <TableColumn fx:id="reviewCountCol" prefWidth="120.0" text="Кол-во отзывов" />
                                         <TableColumn fx:id="avgRatingCol" prefWidth="150.0" text="Средний рейтинг" />
+                                        <TableColumn fx:id="selectCol" prefWidth="70.0" text="Сравнить" />
                                     </columns>
                                 </TableView>
                             </children>

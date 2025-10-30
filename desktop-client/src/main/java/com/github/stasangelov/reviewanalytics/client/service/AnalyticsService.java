@@ -2,15 +2,9 @@ package com.github.stasangelov.reviewanalytics.client.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.github.stasangelov.reviewanalytics.client.model.DashboardDto;
-import com.github.stasangelov.reviewanalytics.client.model.ErrorResponseDto;
-import com.github.stasangelov.reviewanalytics.client.model.ProductSummaryDto;
-import com.github.stasangelov.reviewanalytics.client.model.ProductDetailsDto;
+import com.github.stasangelov.reviewanalytics.client.model.*;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import okhttp3.OkHttpClient;
-import okhttp3.HttpUrl;
-import okhttp3.Request;
-import okhttp3.Response;
+import okhttp3.*;
 
 import java.io.IOException;
 import java.time.LocalDate;
@@ -119,6 +113,26 @@ public class AnalyticsService {
         try (Response response = client.newCall(request).execute()) {
             if (response.isSuccessful()) {
                 return objectMapper.readValue(response.body().string(), ProductDetailsDto.class);
+            } else {
+                handleError(response);
+                return null;
+            }
+        }
+    }
+    /**
+     * НОВЫЙ МЕТОД: Отправляет список ID товаров и получает данные для сравнения.
+     */
+    public List<ComparisonDataDto> getComparisonData(List<Long> productIds) throws IOException {
+        String json = objectMapper.writeValueAsString(productIds);
+        RequestBody body = RequestBody.create(json, MediaType.get("application/json"));
+        Request request = new Request.Builder()
+                .url(BASE_URL + "/compare")
+                .post(body)
+                .build();
+
+        try (Response response = client.newCall(request).execute()) {
+            if (response.isSuccessful()) {
+                return objectMapper.readValue(response.body().string(), new TypeReference<>() {});
             } else {
                 handleError(response);
                 return null;

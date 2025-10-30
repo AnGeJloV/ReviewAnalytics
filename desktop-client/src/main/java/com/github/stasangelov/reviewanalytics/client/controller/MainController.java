@@ -3,14 +3,17 @@ package com.github.stasangelov.reviewanalytics.client.controller;
 import com.github.stasangelov.reviewanalytics.client.ClientApplication;
 import com.github.stasangelov.reviewanalytics.client.model.*;
 import com.github.stasangelov.reviewanalytics.client.service.AnalyticsService;
+import com.github.stasangelov.reviewanalytics.client.service.ComparisonService;
 import com.github.stasangelov.reviewanalytics.client.service.DictionaryService;
 import com.github.stasangelov.reviewanalytics.client.service.SessionManager;
 import com.github.stasangelov.reviewanalytics.client.util.ViewSwitcher;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
 import javafx.collections.transformation.SortedList;
 import javafx.fxml.FXMLLoader;
+import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.chart.*;
 import javafx.scene.control.TableCell;
@@ -49,6 +52,7 @@ public class MainController {
     @FXML private Label categoryChartTitle;
     @FXML private StackedBarChart<String, Number> distributionChart;
     @FXML private ScrollPane distributionChartScrollPane;
+    @FXML private TableColumn<ProductSummaryDto, Boolean> selectCol;
 
     // --- Элементы фильтров ---
     @FXML private DatePicker startDatePicker;
@@ -183,6 +187,41 @@ public class MainController {
                 new javafx.beans.property.SimpleObjectProperty<>(cellData.getValue().getReviewCount()));
         avgRatingCol.setCellValueFactory(cellData ->
                 new javafx.beans.property.SimpleObjectProperty<>(cellData.getValue().getAverageRating()));
+        selectCol.setCellValueFactory(cellData -> {
+            ProductSummaryDto summary = cellData.getValue();
+            boolean isSelected = ComparisonService.getInstance().contains(summary.getProductId());
+            return new SimpleObjectProperty<>(isSelected);
+        });
+        selectCol.setCellFactory(param -> new TableCell<>() {
+            private final CheckBox checkBox = new CheckBox();
+            {
+                // Центрируем чекбокс в ячейке
+                setAlignment(Pos.CENTER);
+
+                checkBox.setOnAction(event -> {
+                    ProductSummaryDto summary = getTableView().getItems().get(getIndex());
+                    if (checkBox.isSelected()) {
+                        boolean success = ComparisonService.getInstance().addProduct(summary);
+                        if (!success) {
+                            checkBox.setSelected(false);
+                        }
+                    } else {
+                        ComparisonService.getInstance().removeProduct(summary);
+                    }
+                });
+            }
+
+            @Override
+            protected void updateItem(Boolean item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty) {
+                    setGraphic(null);
+                } else {
+                    checkBox.setSelected(item);
+                    setGraphic(checkBox);
+                }
+            }
+        });
 
         productNameCol.setSortable(true);
         categoryCol.setSortable(true);
@@ -235,6 +274,18 @@ public class MainController {
                 }
             }
         });
+    }
+
+    /**
+     * НОВЫЙ МЕТОД: Обработчик для пункта меню "Сравнение товаров".
+     */
+    @FXML
+    void onGoToComparison(ActionEvent event) {
+        try {
+            ViewSwitcher.showModalWindow("comparison-view.fxml", "Сравнительный анализ");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     /**

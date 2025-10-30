@@ -1,10 +1,8 @@
 package com.github.stasangelov.reviewanalytics.client.controller;
 
-import com.github.stasangelov.reviewanalytics.client.model.CriteriaProfileDto;
-import com.github.stasangelov.reviewanalytics.client.model.ProductDetailsDto;
-import com.github.stasangelov.reviewanalytics.client.model.ReviewDto;
-import com.github.stasangelov.reviewanalytics.client.model.ReviewRatingDto;
+import com.github.stasangelov.reviewanalytics.client.model.*;
 import com.github.stasangelov.reviewanalytics.client.service.AnalyticsService;
+import com.github.stasangelov.reviewanalytics.client.service.ComparisonService;
 import javafx.application.Platform;
 
 import javafx.beans.property.SimpleObjectProperty;
@@ -37,9 +35,11 @@ public class ProductDetailsController {
     @FXML private TableView<ReviewDto> reviewsTable;
     @FXML private PieChart criteriaProfileChart;
     @FXML private FlowPane customLegendPane;
+    @FXML private CheckBox compareCheckBox;
 
     private final AnalyticsService analyticsService = new AnalyticsService();
     private Long productId;
+    private ProductSummaryDto productSummary;
 
     /**
      * Метод для передачи ID товара из главного окна.
@@ -73,6 +73,19 @@ public class ProductDetailsController {
     }
 
     private void updateUi(ProductDetailsDto details) {
+        // Сохраняем сводную информацию о товаре
+        this.productSummary = new ProductSummaryDto(
+                details.getProductId(),
+                details.getProductName(),
+                details.getCategoryName(),
+                details.getBrand(),
+                details.getReviewCount(),
+                details.getAverageRating()
+        );
+
+        // Обновляем состояние чекбокса
+        updateCompareCheckBoxState();
+
         productNameLabel.setText(details.getProductName());
         avgRatingLabel.setText(String.format("%.2f", details.getAverageRating()));
         reviewCountLabel.setText(String.valueOf(details.getReviewCount()));
@@ -235,5 +248,29 @@ public class ProductDetailsController {
                 colorIndex++;
             }
         }
+    }
+
+    /**
+     * НОВЫЙ МЕТОД: Обработчик для CheckBox.
+     */
+    @FXML
+    private void handleToggleCompare() {
+        if (this.productSummary == null) return;
+
+        if (compareCheckBox.isSelected()) {
+            boolean success = ComparisonService.getInstance().addProduct(this.productSummary);
+            if (!success) {
+                compareCheckBox.setSelected(false);
+            }
+        } else {
+            ComparisonService.getInstance().removeProduct(this.productSummary);
+        }
+    }
+
+    /**
+     * Обновляет состояние CheckBox в зависимости от того, есть ли товар в сравнении.
+     */
+    private void updateCompareCheckBoxState() {
+        compareCheckBox.setSelected(ComparisonService.getInstance().contains(this.productId));
     }
 }
