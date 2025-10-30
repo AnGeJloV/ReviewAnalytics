@@ -11,4 +11,5 @@ public class DashboardDto {
     private List<CategoryRatingDto> categoryRatings;
     private List<RatingDynamicDto> ratingDynamics;
     private List<BrandRatingDto> brandRatings;
+    private List<RatingDistributionDto> ratingDistribution;
 }

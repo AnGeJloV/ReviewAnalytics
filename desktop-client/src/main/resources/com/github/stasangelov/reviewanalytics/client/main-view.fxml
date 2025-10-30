@@ -170,6 +170,23 @@
                                 </VBox>
                             </children>
                         </GridPane>
+                        <VBox styleClass="chart-card">
+                            <children>
+                                <Label styleClass="chart-title" text="Распределение оценок по критериям" />
+                                <ScrollPane fx:id="distributionChartScrollPane" fitToHeight="true" fitToWidth="true" VBox.vgrow="ALWAYS">
+                                    <content>
+                                        <StackedBarChart fx:id="distributionChart" animated="false" legendSide="BOTTOM">
+                                            <xAxis>
+                                                <CategoryAxis side="BOTTOM" label="Критерии"/>
+                                            </xAxis>
+                                            <yAxis>
+                                                <NumberAxis side="LEFT" label="Количество оценок"/>
+                                            </yAxis>
+                                        </StackedBarChart>
+                                    </content>
+                                </ScrollPane>
+                            </children>
+                        </VBox>
                     </children>
                 </VBox>
             </content>

@@ -5,29 +5,17 @@ import com.github.stasangelov.reviewanalytics.client.service.AnalyticsService;
 import com.github.stasangelov.reviewanalytics.client.service.DictionaryService;
 import com.github.stasangelov.reviewanalytics.client.service.SessionManager;
 import com.github.stasangelov.reviewanalytics.client.util.ViewSwitcher;
-import javafx.animation.KeyFrame;
-import javafx.animation.Timeline;
-import javafx.scene.chart.LineChart;
+import javafx.scene.chart.*;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.scene.Node;
-import javafx.scene.chart.BarChart;
-import javafx.scene.chart.NumberAxis;
-import javafx.scene.chart.XYChart;
 import javafx.scene.control.*;
-import javafx.scene.paint.Color;
-import javafx.scene.Group;
-import javafx.scene.text.Text;
-import javafx.scene.text.Font;
 import javafx.stage.Stage;
-import javafx.util.Duration;
 import javafx.util.StringConverter;
 
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -44,6 +32,8 @@ public class MainController {
     @FXML private BarChart<String, Number> categoryChart;
     @FXML private LineChart<String, Number> dynamicsChart;
     @FXML private Label categoryChartTitle;
+    @FXML private StackedBarChart<String, Number> distributionChart;
+    @FXML private ScrollPane distributionChartScrollPane;
 
     // --- Элементы фильтров ---
     @FXML private DatePicker startDatePicker;
@@ -134,6 +124,7 @@ public class MainController {
                         updateCategoryChart(dashboardData.getCategoryRatings());
                     }
                     updateDynamicsChart(dashboardData.getRatingDynamics());
+                    updateDistributionChart(dashboardData.getRatingDistribution());
                 });
             } catch (IOException e) {
                 Platform.runLater(() -> {
@@ -146,6 +137,58 @@ public class MainController {
                 e.printStackTrace();
             }
         }).start();
+    }
+
+    /**
+     * НОВЫЙ МЕТОД: Обновляет график распределения оценок.
+     */
+    private void updateDistributionChart(List<RatingDistributionDto> data) {
+        distributionChart.getData().clear();
+
+        double scrollPaneWidth = distributionChartScrollPane.getWidth();
+
+        if (scrollPaneWidth <= 0 && distributionChartScrollPane.getScene() != null) {
+            scrollPaneWidth = distributionChartScrollPane.getScene().getWidth() / 2 - 40; // Примерно половина окна минус отступы
+        }
+
+        if (data == null || data.isEmpty()) {
+            distributionChart.setPrefWidth(0); // Схлопываем график, если нет данных
+            return;
+        }
+
+        // Рассчитываем минимальную ширину графика
+        // (количество критериев * ширина одного столбца + отступы)
+        int numberOfBars = data.size();
+        double barWidth = 75; // Ширина одного столбца
+        double categoryGap = 25; // Промежуток между столбцами
+        double calculatedWidth = (numberOfBars * (barWidth + categoryGap)) + 100;
+
+        // Получаем текущую ширину видимой области ScrollPane
+        distributionChart.setMinWidth(Math.max(calculatedWidth, scrollPaneWidth));
+
+        // Создаем 5 серий данных - по одной на каждую оценку (1, 2, 3, 4, 5)
+        XYChart.Series<String, Number> series1 = new XYChart.Series<>();
+        series1.setName("Оценка 1");
+        XYChart.Series<String, Number> series2 = new XYChart.Series<>();
+        series2.setName("Оценка 2");
+        XYChart.Series<String, Number> series3 = new XYChart.Series<>();
+        series3.setName("Оценка 3");
+        XYChart.Series<String, Number> series4 = new XYChart.Series<>();
+        series4.setName("Оценка 4");
+        XYChart.Series<String, Number> series5 = new XYChart.Series<>();
+        series5.setName("Оценка 5");
+
+        // Проходим по данным и для каждого критерия добавляем количество оценок в соответствующую серию
+        for (RatingDistributionDto distribution : data) {
+            series1.getData().add(new XYChart.Data<>(distribution.getCriterionName(), distribution.getRating1Count()));
+            series2.getData().add(new XYChart.Data<>(distribution.getCriterionName(), distribution.getRating2Count()));
+            series3.getData().add(new XYChart.Data<>(distribution.getCriterionName(), distribution.getRating3Count()));
+            series4.getData().add(new XYChart.Data<>(distribution.getCriterionName(), distribution.getRating4Count()));
+            series5.getData().add(new XYChart.Data<>(distribution.getCriterionName(), distribution.getRating5Count()));
+        }
+
+        // Добавляем все серии на график
+        distributionChart.getData().addAll(series1, series2, series3, series4, series5);
     }
 
     /**

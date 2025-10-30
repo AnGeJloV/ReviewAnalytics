@@ -13,6 +13,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -49,9 +50,65 @@ public class AnalyticsService {
             dashboard.setBrandRatings(null);
         }
         dashboard.setRatingDynamics(calculateRatingDynamics(startDateTime, endDateTime, categoryId));
+        dashboard.setRatingDistribution(calculateRatingDistribution(startDateTime, endDateTime, categoryId));
 
         return dashboard;
     }
+
+    /**
+     * НОВЫЙ МЕТОД: Рассчитывает распределение оценок (1-5) по каждому критерию.
+     */
+    private List<RatingDistributionDto> calculateRatingDistribution(LocalDateTime startDateTime, LocalDateTime endDateTime, Long categoryId) {
+        // Этот запрос проще сделать нативным SQL с использованием CASE
+        StringBuilder sqlBuilder = new StringBuilder(
+                "SELECT c.name as criterion_name, " +
+                        "   COUNT(CASE WHEN rr.rating = 1 THEN 1 END) as count1, " +
+                        "   COUNT(CASE WHEN rr.rating = 2 THEN 1 END) as count2, " +
+                        "   COUNT(CASE WHEN rr.rating = 3 THEN 1 END) as count3, " +
+                        "   COUNT(CASE WHEN rr.rating = 4 THEN 1 END) as count4, " +
+                        "   COUNT(CASE WHEN rr.rating = 5 THEN 1 END) as count5 " +
+                        "FROM review_ratings rr " +
+                        "JOIN criteria c ON rr.criterion_id = c.id " +
+                        "JOIN reviews r ON rr.review_id = r.id " +
+                        "JOIN products p ON r.product_id = p.id " +
+                        "WHERE r.status = 'ACTIVE'"
+        );
+        Map<String, Object> parameters = new HashMap<>();
+
+        if (startDateTime != null) {
+            sqlBuilder.append(" AND r.date_created >= :startDate");
+            parameters.put("startDate", startDateTime);
+        }
+        if (endDateTime != null) {
+            sqlBuilder.append(" AND r.date_created < :endDate");
+            parameters.put("endDate", endDateTime);
+        }
+        if (categoryId != null) {
+            sqlBuilder.append(" AND p.category_id = :categoryId");
+            parameters.put("categoryId", categoryId);
+        }
+
+        sqlBuilder.append(" GROUP BY criterion_name ORDER BY criterion_name");
+
+        List<Object[]> results = entityManager.createNativeQuery(sqlBuilder.toString())
+                .unwrap(org.hibernate.query.Query.class)
+                .setProperties(parameters)
+                .getResultList();
+
+        // Вручную преобразуем результат в DTO
+        List<RatingDistributionDto> distributionList = new ArrayList<>();
+        for (Object[] row : results) {
+            RatingDistributionDto dto = new RatingDistributionDto((String) row[0]);
+            dto.setRating1Count(((Number) row[1]).longValue());
+            dto.setRating2Count(((Number) row[2]).longValue());
+            dto.setRating3Count(((Number) row[3]).longValue());
+            dto.setRating4Count(((Number) row[4]).longValue());
+            dto.setRating5Count(((Number) row[5]).longValue());
+            distributionList.add(dto);
+        }
+        return distributionList;
+    }
+
 
     /**
      * НОВЫЙ МЕТОД: Рассчитывает средний рейтинг для каждого бренда в рамках одной категории.
