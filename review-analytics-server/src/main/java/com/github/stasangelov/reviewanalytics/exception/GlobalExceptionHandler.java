@@ -49,4 +49,13 @@ public class GlobalExceptionHandler {
         );
         return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
     }
+
+    @ExceptionHandler(OperationForbiddenException.class)
+    public ResponseEntity<ErrorResponseDto> handleOperationForbidden(OperationForbiddenException ex) {
+        ErrorResponseDto errorResponse = new ErrorResponseDto(
+                HttpStatus.FORBIDDEN.value(),
+                ex.getMessage()
+        );
+        return new ResponseEntity<>(errorResponse, HttpStatus.FORBIDDEN);
+    }
 }

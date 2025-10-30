@@ -3,9 +3,11 @@ package com.github.stasangelov.reviewanalytics.service;
 import com.github.stasangelov.reviewanalytics.dto.AuthRequest;
 import com.github.stasangelov.reviewanalytics.dto.AuthResponse;
 import com.github.stasangelov.reviewanalytics.dto.RegistrationRequest;
+import com.github.stasangelov.reviewanalytics.dto.UserManagementDto;
 import com.github.stasangelov.reviewanalytics.entity.Role;
 import com.github.stasangelov.reviewanalytics.entity.User;
 import com.github.stasangelov.reviewanalytics.exception.InvalidCredentialsException;
+import com.github.stasangelov.reviewanalytics.exception.ResourceNotFoundException;
 import com.github.stasangelov.reviewanalytics.repository.RoleRepository;
 import com.github.stasangelov.reviewanalytics.repository.UserRepository;
 import com.github.stasangelov.reviewanalytics.security.JwtTokenProvider;
@@ -19,8 +21,12 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import com.github.stasangelov.reviewanalytics.exception.OperationForbiddenException;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Реализация интерфейса {@link UserService}.
@@ -52,7 +58,7 @@ public class UserServiceImpl implements UserService {
         // 4. Назначаем роль по умолчанию
         Role userRole = roleRepository.findByName(Role.RoleName.ANALYST)
                 .orElseThrow(() -> new RuntimeException("Роль по умолчанию ANALYST не найдена в БД"));
-        user.setRoles(Set.of(userRole));
+        user.setRoles(new HashSet<>(Set.of(userRole)));
 
         // 5. Сохраняем пользователя в БД и возвращаем его
         return userRepository.save(user);
@@ -61,33 +67,82 @@ public class UserServiceImpl implements UserService {
     @Override
     public AuthResponse loginUser(AuthRequest authRequest) {
         try {
-            // 1. Spring Security проверяет правильность email и пароля
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
                             authRequest.getEmail(),
                             authRequest.getPassword()
                     )
             );
-            // 2. Если все верно, помещаем объект аутентификации в SecurityContext
-            SecurityContextHolder.getContext().setAuthentication(authentication);
 
-            // 3. Генерируем JWT-токен
+            // Получаем сущность пользователя из БД и проверяем active
+            User user = userRepository.findByEmail(authRequest.getEmail())
+                    .orElseThrow(() -> new InvalidCredentialsException("Пользователь не найден"));
+
+            if (!user.isActive()) {
+                throw new InvalidCredentialsException("Учетная запись заблокирована");
+            }
+
+            SecurityContextHolder.getContext().setAuthentication(authentication);
             String token = jwtTokenProvider.createToken(authRequest.getEmail());
 
-            // 4. Получаем роли пользователя из объекта Authentication
             Set<String> roles = authentication.getAuthorities().stream()
                     .map(GrantedAuthority::getAuthority)
                     .collect(Collectors.toSet());
 
-            // 5. Создаем и возвращаем объект AuthResponse
             AuthResponse response = new AuthResponse();
             response.setToken(token);
             response.setRoles(roles);
             return response;
 
         } catch (AuthenticationException e) {
-            // Если аутентификация провалилась, бросаем наше кастомное исключение
             throw new InvalidCredentialsException("Неправильный email или пароль");
         }
+    }
+
+    @Transactional(readOnly = true)
+    public List<UserManagementDto> getAllUsers() {
+        return userRepository.findAll().stream()
+                .map(user -> new UserManagementDto(
+                        user.getId(),
+                        user.getName(),
+                        user.getEmail(),
+                        user.isActive(),
+                        user.getRoles()
+                ))
+                .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public UserManagementDto changeUserRole(Long userId, Role.RoleName newRoleName, User currentUser) {
+        if (userId.equals(currentUser.getId())) {
+            throw new OperationForbiddenException("Вы не можете изменить собственную роль.");
+        }
+
+        User userToUpdate = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Пользователь с id " + userId + " не найден"));
+
+        Role newRole = roleRepository.findByName(newRoleName)
+                .orElseThrow(() -> new RuntimeException("Роль " + newRoleName + " не найдена"));
+
+        // Устанавливаем только одну роль
+        userToUpdate.setRoles(new HashSet<>(Set.of(newRole)));
+        User updatedUser = userRepository.save(userToUpdate);
+
+        return new UserManagementDto(updatedUser.getId(), updatedUser.getName(), updatedUser.getEmail(), updatedUser.isActive(), updatedUser.getRoles());
+    }
+
+    @Transactional
+    public UserManagementDto changeUserStatus(Long userId, boolean newStatus, User currentUser) {
+        if (userId.equals(currentUser.getId())) {
+            throw new OperationForbiddenException("Вы не можете заблокировать собственную учетную запись.");
+        }
+
+        User userToUpdate = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Пользователь с id " + userId + " не найден"));
+
+        userToUpdate.setActive(newStatus);
+        User updatedUser = userRepository.save(userToUpdate);
+
+        return new UserManagementDto(updatedUser.getId(), updatedUser.getName(), updatedUser.getEmail(), updatedUser.isActive(), updatedUser.getRoles());
     }
 }

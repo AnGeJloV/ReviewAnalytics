@@ -14,6 +14,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -37,10 +38,10 @@ public class DataInitializer implements CommandLineRunner {
         Role analystRole = createRoleIfNotFound(Role.RoleName.ANALYST);
 
         // 2. Создаем пользователя-администратора, если его нет.
-        createUserIfNotFound("admin", "admin@admin", "admin", Set.of(adminRole, analystRole));
+        createUserIfNotFound("admin", "admin@admin", "admin", Set.of(adminRole));
 
         // 3. Создаем обычного пользователя-аналитика, если его нет.
-        createUserIfNotFound("user", "user@user", "user", Set.of(analystRole));
+        createUserIfNotFound("user", "user@user", "user", new HashSet<>(Set.of(analystRole)));
 
         recalculateAllIntegralRatings();
 
@@ -77,7 +78,7 @@ public class DataInitializer implements CommandLineRunner {
             // Обязательно хешируем пароль!
             user.setPasswordHash(passwordEncoder.encode(password));
             user.setActive(true);
-            user.setRoles(roles);
+            user.setRoles(new HashSet<>(roles));
 
             userRepository.save(user);
             log.info("Создан пользователь по умолчанию: email='{}', password='{}'", email, password);

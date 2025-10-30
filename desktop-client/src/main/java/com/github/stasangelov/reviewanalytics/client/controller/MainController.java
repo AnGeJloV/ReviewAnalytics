@@ -510,4 +510,13 @@ public class MainController {
         Stage currentStage = (Stage) totalReviewsLabel.getScene().getWindow();
         ViewSwitcher.switchScene(currentStage, "login-view.fxml");
     }
+
+    @FXML
+    void onGoToUserManagement(ActionEvent event) {
+        try {
+            ViewSwitcher.showModalWindow("user-management-view.fxml", "Управление пользователями");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 }

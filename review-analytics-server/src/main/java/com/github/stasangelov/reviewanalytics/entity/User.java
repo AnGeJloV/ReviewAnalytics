@@ -3,6 +3,7 @@ package com.github.stasangelov.reviewanalytics.entity;
 import jakarta.persistence.*;
 import lombok.Data;
 
+import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -31,10 +32,12 @@ public class User {
     private boolean active;
 
     @ManyToMany(fetch = FetchType.EAGER)
-    @JoinTable(
-            name = "user_roles",
-            joinColumns = @JoinColumn(name = "user_id"),
-            inverseJoinColumns = @JoinColumn(name = "role_id")
-    )
-    private Set<Role> roles;
+    @JoinTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id"), inverseJoinColumns = @JoinColumn(name = "role_id"))
+// Инициализируем изменяемой коллекцией по умолчанию
+    private Set<Role> roles = new HashSet<>();
+
+    // Defensive setter: всегда копируем во внутреннюю mutable-коллекцию
+    public void setRoles(Set<Role> roles) {
+        this.roles = (roles == null) ? new HashSet<>() : new HashSet<>(roles);
+    }
 }
