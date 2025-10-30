@@ -1,18 +1,29 @@
 package com.github.stasangelov.reviewanalytics.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.stasangelov.reviewanalytics.dto.DashboardDto;
 import com.github.stasangelov.reviewanalytics.service.AnalyticsService;
 import com.github.stasangelov.reviewanalytics.dto.ProductDetailsDto;
 import com.github.stasangelov.reviewanalytics.dto.ProductSummaryDto;
+import com.github.stasangelov.reviewanalytics.service.PdfGenerationService;
+import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import com.github.stasangelov.reviewanalytics.dto.ComparisonDataDto;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.bind.annotation.RequestPart;
 
+import java.io.IOException;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/analytics")
@@ -21,6 +32,8 @@ import java.util.List;
 public class AnalyticsController {
 
     private final AnalyticsService analyticsService;
+    private final PdfGenerationService pdfGenerationService;
+    private final ObjectMapper objectMapper;
 
     /**
      * Возвращает все агрегированные данные для главной информационной панели.
@@ -67,5 +80,46 @@ public class AnalyticsController {
             return ResponseEntity.badRequest().build();
         }
         return ResponseEntity.ok(analyticsService.getComparisonData(productIds));
+    }
+
+    @PostMapping("/dashboard/export-pdf")
+    public ResponseEntity<byte[]> exportDashboardPdf(
+            @RequestPart("filters") String filtersJson,
+            @RequestPart("charts") MultipartFile[] charts
+    ) throws IOException {
+
+        // 1. Десериализуем JSON с фильтрами обратно в объект
+        DashboardFilters filters = objectMapper.readValue(filtersJson, DashboardFilters.class);
+
+        // 2. Получаем данные для отчета на основе фильтров
+        DashboardDto dashboardData = analyticsService.getDashboardData(
+                filters.getStartDate(), filters.getEndDate(), filters.getCategoryId());
+
+        // 3. Преобразуем MultipartFile[] в удобную Map<String, byte[]>
+        Map<String, byte[]> chartImages = new HashMap<>();
+        for (MultipartFile chart : charts) {
+            // Убираем расширение .png из имени файла, чтобы оно соответствовало ключам
+            String originalFilename = chart.getOriginalFilename().replace(".png", "");
+            chartImages.put(originalFilename, chart.getBytes());
+        }
+
+        // 4. Генерируем PDF, передавая и данные, и изображения
+        byte[] pdfContents = pdfGenerationService.generateDashboardPdf(dashboardData, chartImages);
+
+        // 5. Формируем HTTP-ответ с файлом
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_PDF);
+        headers.setContentDispositionFormData("attachment", "dashboard_report.pdf");
+        headers.setContentLength(pdfContents.length);
+
+        return new ResponseEntity<>(pdfContents, headers, HttpStatus.OK);
+    }
+
+    // Вспомогательный класс для десериализации фильтров
+    @Data
+    private static class DashboardFilters {
+        private LocalDate startDate;
+        private LocalDate endDate;
+        private Long categoryId;
     }
 }

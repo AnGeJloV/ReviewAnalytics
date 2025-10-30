@@ -4,7 +4,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.github.stasangelov.reviewanalytics.client.model.*;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 import okhttp3.*;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import java.util.Map;
 
 import java.io.IOException;
 import java.time.LocalDate;
@@ -18,6 +22,7 @@ public class AnalyticsService {
     private static final String BASE_URL = "http://localhost:8080/api/analytics";
     private final OkHttpClient client = HttpClientService.getClient();
     private final ObjectMapper objectMapper = new ObjectMapper();
+    private static final MediaType PNG = MediaType.parse("image/png");
 
     public AnalyticsService() {
         objectMapper.registerModule(new JavaTimeModule());
@@ -139,4 +144,53 @@ public class AnalyticsService {
             }
         }
     }
+    /**
+     * Запрашивает PDF-отчет для дашборда.
+     * Возвращает массив байт, представляющий PDF-файл.
+     */
+    public byte[] getDashboardPdf(LocalDate startDate, LocalDate endDate, Long categoryId, Map<String, byte[]> chartImages) throws IOException {
+        // 1. Создаем объект с фильтрами и сериализуем его в JSON
+        DashboardFilters filters = new DashboardFilters(startDate, endDate, categoryId);
+        objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL); // Чтобы не отправлять null поля
+        String filtersJson = objectMapper.writeValueAsString(filters);
+
+        // 2. Строим multipart-тело запроса
+        MultipartBody.Builder requestBodyBuilder = new MultipartBody.Builder()
+                .setType(MultipartBody.FORM)
+                .addFormDataPart("filters", filtersJson);
+
+        // 3. Добавляем каждый снимок графика как отдельную часть
+        for (Map.Entry<String, byte[]> entry : chartImages.entrySet()) {
+            requestBodyBuilder.addFormDataPart(
+                    "charts", // Имя параметра должно совпадать с @RequestParam на сервере
+                    entry.getKey(), // Имя файла (например, "categoryChart.png")
+                    RequestBody.create(entry.getValue(), PNG)
+            );
+        }
+
+        // 4. Создаем и выполняем запрос
+        Request request = new Request.Builder()
+                .url(BASE_URL + "/dashboard/export-pdf")
+                .post(requestBodyBuilder.build())
+                .build();
+
+        try (Response response = client.newCall(request).execute()) {
+            if (response.isSuccessful()) {
+                return response.body().bytes();
+            } else {
+                handleError(response);
+                return null;
+            }
+        }
+    }
+
+    // Вспомогательный класс для сериализации фильтров
+    @Data
+    @AllArgsConstructor
+    private static class DashboardFilters {
+        private LocalDate startDate;
+        private LocalDate endDate;
+        private Long categoryId;
+    }
+
 }

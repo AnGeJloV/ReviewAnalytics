@@ -70,6 +70,8 @@
                                 </VBox>
                                 <Button onAction="#applyFilters" text="Применить"/>
                                 <Button onAction="#resetFilters" text="Сбросить"/>
+                                <Region HBox.hgrow="ALWAYS" /> <!-- Этот элемент отодвинет кнопку вправо -->
+                                <Button onAction="#exportDashboardToPdf" text="Экспорт в PDF" />
                             </children>
                         </HBox>
 

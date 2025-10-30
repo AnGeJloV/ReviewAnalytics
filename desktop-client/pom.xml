@@ -23,6 +23,11 @@
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-fxml</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-swing</artifactId>
+            <version>${javafx.version}</version> <!-- Версия возьмется из properties -->
+        </dependency>
         <!-- HTTP-клиент для отправки запросов на сервер -->
         <dependency>
             <groupId>com.squareup.okhttp3</groupId>

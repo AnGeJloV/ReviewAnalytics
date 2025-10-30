@@ -30,12 +30,27 @@ import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.util.StringConverter;
+import javafx.stage.FileChooser;
+import java.io.File;
+import java.nio.file.Files;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.List;
+
+import javafx.embed.swing.SwingFXUtils;
+import javafx.scene.Node;
+import javafx.scene.SnapshotParameters;
+import javafx.scene.image.WritableImage;
+import javafx.scene.paint.Color;
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+import java.util.HashMap;
+import java.util.Map;
 
 public class MainController {
 
@@ -518,5 +533,78 @@ public class MainController {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+    @FXML
+    void exportDashboardToPdf(ActionEvent event) {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Сохранить отчет");
+        fileChooser.setInitialFileName("dashboard_report.pdf");
+        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("PDF Documents", "*.pdf"));
+        File file = fileChooser.showSaveDialog(totalReviewsLabel.getScene().getWindow());
+
+        if (file != null) {
+            // Собираем фильтры
+            LocalDate startDate = startDatePicker.getValue();
+            LocalDate endDate = endDatePicker.getValue();
+            CategoryDto selectedCategory = categoryComboBox.getSelectionModel().getSelectedItem();
+            Long categoryId = (selectedCategory != null) ? selectedCategory.getId() : null;
+
+            // Делаем снимки графиков
+            try {
+                Map<String, byte[]> chartImages = new HashMap<>();
+                chartImages.put("categoryChart.png", snapshotNode(categoryChart));
+                chartImages.put("dynamicsChart.png", snapshotNode(dynamicsChart));
+                chartImages.put("distributionChart.png", snapshotNode(distributionChart));
+
+                new Thread(() -> {
+                    try {
+                        byte[] pdfData = analyticsService.getDashboardPdf(startDate, endDate, categoryId, chartImages);
+                        Files.write(file.toPath(), pdfData);
+
+                        Platform.runLater(() -> {
+                            Alert alert = new Alert(Alert.AlertType.INFORMATION, "Отчет успешно сохранен: " + file.getAbsolutePath());
+                            alert.setTitle("Успех");
+                            alert.setHeaderText(null);
+                            alert.showAndWait();
+                        });
+                    } catch (IOException e) {
+                        Platform.runLater(() -> showErrorAlert("Ошибка сохранения", "Не удалось сформировать или сохранить отчет.", e.getMessage()));
+                        e.printStackTrace();
+                    }
+                }).start();
+
+            } catch (IOException e) {
+                showErrorAlert("Ошибка снимка", "Не удалось сделать снимок графика.", e.getMessage());
+                e.printStackTrace();
+            }
+        }
+    }
+
+    /**
+     * Вспомогательный метод для создания снимка любого JavaFX узла (Node) и преобразования его в byte[].
+     */
+    private byte[] snapshotNode(Node node) throws IOException {
+        WritableImage image = node.snapshot(new SnapshotParameters(), null);
+
+        // Устанавливаем белый фон вместо прозрачного для лучшего вида в PDF
+        BufferedImage bufferedImage = SwingFXUtils.fromFXImage(image, null);
+        BufferedImage imageWithBackground = new BufferedImage(bufferedImage.getWidth(), bufferedImage.getHeight(), BufferedImage.TYPE_INT_RGB);
+        imageWithBackground.getGraphics().setColor(java.awt.Color.WHITE);
+        imageWithBackground.getGraphics().fillRect(0, 0, bufferedImage.getWidth(), bufferedImage.getHeight());
+        imageWithBackground.getGraphics().drawImage(bufferedImage, 0, 0, null);
+
+        try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+            ImageIO.write(imageWithBackground, "png", outputStream);
+            return outputStream.toByteArray();
+        }
+    }
+
+    // Вспомогательный метод для показа ошибок
+    private void showErrorAlert(String title, String header, String content) {
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle(title);
+        alert.setHeaderText(header);
+        alert.setContentText(content);
+        alert.showAndWait();
     }
 }
