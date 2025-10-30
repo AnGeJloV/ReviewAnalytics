@@ -1,13 +1,16 @@
 package com.github.stasangelov.reviewanalytics.service;
 
 import com.github.stasangelov.reviewanalytics.dto.*;
+import com.github.stasangelov.reviewanalytics.entity.Product;
 import com.github.stasangelov.reviewanalytics.entity.Review;
+import com.github.stasangelov.reviewanalytics.exception.ResourceNotFoundException;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.TypedQuery;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.github.stasangelov.reviewanalytics.service.mapper.ReviewMapper;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -25,6 +28,7 @@ public class AnalyticsService {
 
     @PersistenceContext
     private final EntityManager entityManager;
+    private final ReviewMapper reviewMapper;
 
     /**
      * Главный метод, который собирает все данные для дашборда с учетом фильтров.
@@ -54,6 +58,99 @@ public class AnalyticsService {
 
         return dashboard;
     }
+
+    /**
+     * НОВЫЙ МЕТОД: Возвращает сводную аналитику по всем товарам для таблицы.
+     */
+    public List<ProductSummaryDto> getProductsSummary(LocalDate startDate, LocalDate endDate, Long categoryId) {
+        LocalDateTime startDateTime = (startDate != null) ? startDate.atStartOfDay() : null;
+        LocalDateTime endDateTime = (endDate != null) ? endDate.plusDays(1).atStartOfDay() : null;
+
+        StringBuilder jpqlBuilder = new StringBuilder(
+                "SELECT NEW com.github.stasangelov.reviewanalytics.dto.ProductSummaryDto(" +
+                        "   p.id, p.name, p.category.name, p.brand, COUNT(r), AVG(r.integralRating)" +
+                        ") " +
+                        "FROM Product p LEFT JOIN Review r ON r.product = p AND r.status = 'ACTIVE' "
+        );
+
+        // Динамически добавляем WHERE условия
+        Map<String, Object> parameters = new HashMap<>();
+        boolean hasWhere = false;
+
+        if (startDateTime != null) {
+            jpqlBuilder.append(" WHERE r.dateCreated >= :startDate");
+            parameters.put("startDate", startDateTime);
+            hasWhere = true;
+        }
+        if (endDateTime != null) {
+            jpqlBuilder.append(hasWhere ? " AND" : " WHERE").append(" r.dateCreated < :endDate");
+            parameters.put("endDate", endDateTime);
+            hasWhere = true;
+        }
+        if (categoryId != null) {
+            jpqlBuilder.append(hasWhere ? " AND" : " WHERE").append(" p.category.id = :categoryId");
+            parameters.put("categoryId", categoryId);
+        }
+
+        jpqlBuilder.append(" GROUP BY p.id, p.name, p.category.name, p.brand ORDER BY p.name ASC");
+
+        TypedQuery<ProductSummaryDto> query = entityManager.createQuery(jpqlBuilder.toString(), ProductSummaryDto.class);
+        parameters.forEach(query::setParameter);
+
+        return query.getResultList();
+    }
+
+    /**
+     * НОВЫЙ МЕТОД: Возвращает полную детализацию по одному товару.
+     */
+    public ProductDetailsDto getProductDetails(Long productId) {
+        // 1. Находим профиль по критериям (средние оценки)
+        String profileJpql = "SELECT NEW com.github.stasangelov.reviewanalytics.dto.CriteriaProfileDto(" +
+                "   rr.criterion.name, AVG(rr.rating)" +
+                ") " +
+                "FROM ReviewRating rr JOIN rr.review r " +
+                "WHERE r.product.id = :productId AND r.status = 'ACTIVE' " +
+                "GROUP BY rr.criterion.name";
+        List<CriteriaProfileDto> criteriaProfile = entityManager.createQuery(profileJpql, CriteriaProfileDto.class)
+                .setParameter("productId", productId)
+                .getResultList();
+
+        // 2. Находим все отзывы на этот товар
+        String reviewsJpql = "SELECT r FROM Review r WHERE r.product.id = :productId ORDER BY r.dateCreated DESC";
+        List<Review> reviews = entityManager.createQuery(reviewsJpql, Review.class)
+                .setParameter("productId", productId)
+                .getResultList();
+
+        // 3. Собираем все в один DTO
+        Product product = reviews.isEmpty() ?
+                entityManager.find(Product.class, productId) :
+                reviews.get(0).getProduct();
+
+        if (product == null) {
+            throw new ResourceNotFoundException("Товар с id " + productId + " не найден");
+        }
+
+        ProductDetailsDto details = new ProductDetailsDto();
+        details.setProductId(product.getId());
+        details.setProductName(product.getName());
+        details.setCategoryName(product.getCategory().getName());
+        details.setBrand(product.getBrand());
+        details.setReviewCount((long) reviews.size());
+
+        // Считаем общий средний рейтинг
+        double avgRating = reviews.stream()
+                .filter(r -> r.getStatus() == Review.ReviewStatus.ACTIVE && r.getIntegralRating() != null)
+                .mapToDouble(Review::getIntegralRating)
+                .average()
+                .orElse(0.0);
+        details.setAverageRating(avgRating);
+
+        details.setCriteriaProfile(criteriaProfile);
+        details.setReviews(reviews.stream().map(reviewMapper::toDto).collect(Collectors.toList()));
+
+        return details;
+    }
+
 
     /**
      * НОВЫЙ МЕТОД: Рассчитывает распределение оценок (1-5) по каждому критерию.

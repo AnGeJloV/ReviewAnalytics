@@ -187,6 +187,24 @@
                                 </ScrollPane>
                             </children>
                         </VBox>
+                        <VBox styleClass="chart-card" VBox.vgrow="ALWAYS">
+                            <children>
+                                <HBox alignment="CENTER_LEFT" spacing="10" style="-fx-padding: 0 0 10 0;">
+                                    <Label styleClass="chart-title" text="Сводка по товарам" />
+                                    <Region HBox.hgrow="ALWAYS" />
+                                    <TextField fx:id="productSearchField" promptText="Поиск по названию, бренду..." prefWidth="300"/>
+                                </HBox>
+                                <TableView fx:id="productsSummaryTable" VBox.vgrow="ALWAYS">
+                                    <columns>
+                                        <TableColumn fx:id="productNameCol" prefWidth="250.0" text="Название товара" />
+                                        <TableColumn fx:id="categoryCol" prefWidth="150.0" text="Категория" />
+                                        <TableColumn fx:id="brandCol" prefWidth="150.0" text="Бренд" />
+                                        <TableColumn fx:id="reviewCountCol" prefWidth="120.0" text="Кол-во отзывов" />
+                                        <TableColumn fx:id="avgRatingCol" prefWidth="150.0" text="Средний рейтинг" />
+                                    </columns>
+                                </TableView>
+                            </children>
+                        </VBox>
                     </children>
                 </VBox>
             </content>

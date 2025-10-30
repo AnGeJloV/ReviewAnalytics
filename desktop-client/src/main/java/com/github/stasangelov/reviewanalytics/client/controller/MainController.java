@@ -1,15 +1,30 @@
 package com.github.stasangelov.reviewanalytics.client.controller;
 
+import com.github.stasangelov.reviewanalytics.client.ClientApplication;
 import com.github.stasangelov.reviewanalytics.client.model.*;
 import com.github.stasangelov.reviewanalytics.client.service.AnalyticsService;
 import com.github.stasangelov.reviewanalytics.client.service.DictionaryService;
 import com.github.stasangelov.reviewanalytics.client.service.SessionManager;
 import com.github.stasangelov.reviewanalytics.client.util.ViewSwitcher;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.collections.transformation.FilteredList;
+import javafx.collections.transformation.SortedList;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Scene;
 import javafx.scene.chart.*;
+import javafx.scene.control.TableCell;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableView;
+import javafx.scene.control.TextField;
+import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
+import javafx.scene.input.MouseButton;
+import javafx.scene.layout.VBox;
+import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.util.StringConverter;
 
@@ -40,6 +55,17 @@ public class MainController {
     @FXML private DatePicker endDatePicker;
     @FXML private ComboBox<CategoryDto> categoryComboBox;
 
+    @FXML private TextField productSearchField;
+    @FXML private TableView<ProductSummaryDto> productsSummaryTable;
+    @FXML private TableColumn<ProductSummaryDto, String> productNameCol;
+    @FXML private TableColumn<ProductSummaryDto, String> categoryCol;
+    @FXML private TableColumn<ProductSummaryDto, String> brandCol;
+    @FXML private TableColumn<ProductSummaryDto, Long> reviewCountCol;
+    @FXML private TableColumn<ProductSummaryDto, Double> avgRatingCol;
+
+    // Список для хранения всех загруженных данных для таблицы
+    private final ObservableList<ProductSummaryDto> allProductsSummary = FXCollections.observableArrayList();
+
     private final AnalyticsService analyticsService = new AnalyticsService();
     private final DictionaryService dictionaryService = new DictionaryService();
 
@@ -54,6 +80,7 @@ public class MainController {
         }
         setupCategoryFilter();
         loadDashboardData();
+        setupProductsSummaryTable();
     }
 
     /**
@@ -112,6 +139,7 @@ public class MainController {
         new Thread(() -> {
             try {
                 final DashboardDto dashboardData = analyticsService.getDashboardData(startDate, endDate, categoryId);
+                final List<ProductSummaryDto> productsSummary = analyticsService.getProductsSummary(startDate, endDate, categoryId);
                 Platform.runLater(() -> {
                     updateKpis(dashboardData.getKpis());
                     updateTopProductsChart(topProductsChart, dashboardData.getTopRatedProducts(), "Лучшие");
@@ -125,6 +153,7 @@ public class MainController {
                     }
                     updateDynamicsChart(dashboardData.getRatingDynamics());
                     updateDistributionChart(dashboardData.getRatingDistribution());
+                    allProductsSummary.setAll(productsSummary);
                 });
             } catch (IOException e) {
                 Platform.runLater(() -> {
@@ -137,6 +166,101 @@ public class MainController {
                 e.printStackTrace();
             }
         }).start();
+    }
+
+    /**
+     * НОВЫЙ МЕТОД: Настраивает таблицу со сводкой по товарам.
+     */
+    private void setupProductsSummaryTable() {
+        // 1. Привязываем колонки к полям DTO
+        productNameCol.setCellValueFactory(cellData ->
+                new javafx.beans.property.SimpleStringProperty(cellData.getValue().getProductName()));
+        categoryCol.setCellValueFactory(cellData ->
+                new javafx.beans.property.SimpleStringProperty(cellData.getValue().getCategoryName()));
+        brandCol.setCellValueFactory(cellData ->
+                new javafx.beans.property.SimpleStringProperty(cellData.getValue().getBrand()));
+        reviewCountCol.setCellValueFactory(cellData ->
+                new javafx.beans.property.SimpleObjectProperty<>(cellData.getValue().getReviewCount()));
+        avgRatingCol.setCellValueFactory(cellData ->
+                new javafx.beans.property.SimpleObjectProperty<>(cellData.getValue().getAverageRating()));
+
+        productNameCol.setSortable(true);
+        categoryCol.setSortable(true);
+        brandCol.setSortable(true);
+        reviewCountCol.setSortable(true);
+        avgRatingCol.setSortable(true);
+
+        // 2. Форматируем колонку с рейтингом
+        avgRatingCol.setCellFactory(column -> new TableCell<>() {
+            @Override
+            protected void updateItem(Double item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null || item == 0.0) {
+                    setText(null);
+                } else {
+                    setText(String.format("%.2f", item));
+                }
+            }
+        });
+
+        // 3. Настраиваем фильтрацию (поиск)
+        FilteredList<ProductSummaryDto> filteredData = new FilteredList<>(allProductsSummary, p -> true);
+        productSearchField.textProperty().addListener((obs, oldVal, newVal) -> {
+            filteredData.setPredicate(summary -> {
+                if (newVal == null || newVal.isEmpty()) {
+                    return true;
+                }
+                String lowerCaseFilter = newVal.toLowerCase();
+                return summary.getProductName().toLowerCase().contains(lowerCaseFilter)
+                        || summary.getBrand().toLowerCase().contains(lowerCaseFilter);
+            });
+        });
+        productsSummaryTable.setItems(filteredData);
+
+        // 4. Привязываем отфильтрованные и сортируемые данные к таблице
+        // Создаем SortedList, который оборачивает FilteredList
+        SortedList<ProductSummaryDto> sortedData = new SortedList<>(filteredData);
+        // Привязываем компаратор (логику сортировки) таблицы к SortedList
+        sortedData.comparatorProperty().bind(productsSummaryTable.comparatorProperty());
+
+        // Устанавливаем отсортированные данные в таблицу
+        productsSummaryTable.setItems(sortedData);
+
+        // 5. Настраиваем переход к детализации по двойному клику
+        productsSummaryTable.setOnMouseClicked(event -> {
+            if (event.getButton().equals(MouseButton.PRIMARY) && event.getClickCount() == 2) {
+                ProductSummaryDto selected = productsSummaryTable.getSelectionModel().getSelectedItem();
+                if (selected != null) {
+                    openProductDetailsWindow(selected.getProductId());
+                }
+            }
+        });
+    }
+
+    /**
+     * Открывает новое модальное окно с детализацией по товару.
+     */
+    private void openProductDetailsWindow(Long productId) {
+        try {
+            FXMLLoader loader = new FXMLLoader(ClientApplication.class.getResource("product-details-view.fxml"));
+            VBox page = loader.load();
+
+            // Получаем контроллер нового окна
+            ProductDetailsController controller = loader.getController();
+            // Передаем в него ID товара
+            controller.setProductId(productId);
+
+            Stage dialogStage = new Stage();
+            dialogStage.setTitle("Детализированная аналитика по товару");
+            dialogStage.initModality(Modality.WINDOW_MODAL);
+            dialogStage.initOwner(productsSummaryTable.getScene().getWindow());
+            dialogStage.setScene(new Scene(page));
+
+            dialogStage.showAndWait();
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     /**

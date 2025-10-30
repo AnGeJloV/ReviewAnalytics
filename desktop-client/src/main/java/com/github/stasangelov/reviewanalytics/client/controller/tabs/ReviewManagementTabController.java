@@ -5,10 +5,13 @@ import com.github.stasangelov.reviewanalytics.client.controller.dialog.ReviewEdi
 import com.github.stasangelov.reviewanalytics.client.model.ReviewDto;
 import com.github.stasangelov.reviewanalytics.client.service.ApiException;
 import com.github.stasangelov.reviewanalytics.client.service.ReviewService;
+import javafx.beans.property.SimpleObjectProperty;
+import javafx.beans.property.SimpleStringProperty;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
+import javafx.collections.transformation.SortedList;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
@@ -24,9 +27,13 @@ import java.util.List;
 
 public class ReviewManagementTabController {
 
-    @FXML
-    private TableView<ReviewDto> reviewTable;
+    @FXML private TableView<ReviewDto> reviewTable;
     @FXML private TextField searchField;
+    @FXML private TableColumn<ReviewDto, String> productCol;
+    @FXML private TableColumn<ReviewDto, Double> ratingCol;
+    @FXML private TableColumn<ReviewDto, LocalDateTime> dateCol;
+    @FXML private TableColumn<ReviewDto, String> statusCol;
+
     private final ReviewService reviewService = new ReviewService();
 
     private final ObservableList<ReviewDto> allReviews = FXCollections.observableArrayList();
@@ -34,19 +41,23 @@ public class ReviewManagementTabController {
     @FXML
     public void initialize() {
         setupTable();
-        setupSearchFilter();
         loadReviews();
     }
 
     private void setupTable() {
-        TableColumn<ReviewDto, String> productCol = new TableColumn<>("Товар");
-        productCol.setCellValueFactory(new PropertyValueFactory<>("productName"));
-        productCol.setPrefWidth(350);
+        // 1. Привязываем данные к колонкам через лямбда-выражения
+        productCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getProductName()));
+        ratingCol.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().getIntegralRating()));
+        dateCol.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().getDateCreated()));
+        statusCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getStatus()));
 
-        TableColumn<ReviewDto, Double> ratingCol = new TableColumn<>("Интегр. рейтинг");
-        ratingCol.setCellValueFactory(new PropertyValueFactory<>("integralRating"));
-        ratingCol.setPrefWidth(120);
+        // 2. Включаем сортировку для колонок
+        productCol.setSortable(true);
+        ratingCol.setSortable(true);
+        dateCol.setSortable(true);
+        statusCol.setSortable(true);
 
+        // 3. Форматируем ячейки (код без изменений)
         ratingCol.setCellFactory(column -> new TableCell<>() {
             @Override
             protected void updateItem(Double item, boolean empty) {
@@ -59,45 +70,28 @@ public class ReviewManagementTabController {
             }
         });
 
-        TableColumn<ReviewDto, LocalDateTime> dateCol = new TableColumn<>("Дата");
-        dateCol.setCellValueFactory(new PropertyValueFactory<>("dateCreated"));
-        dateCol.setPrefWidth(150);
-
-        TableColumn<ReviewDto, String> statusCol = new TableColumn<>("Статус");
-        statusCol.setCellValueFactory(new PropertyValueFactory<>("status"));
-        statusCol.setPrefWidth(100);
-
-        reviewTable.getColumns().setAll(productCol, ratingCol, dateCol, statusCol);
-    }
-
-    /**
-     * Настраивает логику фильтрации таблицы на основе текста в поле поиска.
-     */
-    private void setupSearchFilter() {
-        // 1. Оборачиваем наш основной список в FilteredList.
+        // 4. Настраиваем фильтрацию и сортировку
         FilteredList<ReviewDto> filteredData = new FilteredList<>(allReviews, p -> true);
 
-        // 2. Добавляем "слушателя" на изменение текста в поле поиска.
         searchField.textProperty().addListener((observable, oldValue, newValue) -> {
             filteredData.setPredicate(review -> {
-                // Если поле поиска пустое, показываем все отзывы.
                 if (newValue == null || newValue.isEmpty()) {
                     return true;
                 }
-
                 String lowerCaseFilter = newValue.toLowerCase();
-
                 if (review.getProductName() != null && review.getProductName().toLowerCase().contains(lowerCaseFilter)) {
                     return true;
                 }
-
                 return false;
             });
         });
 
-        // 3. Привязываем отфильтрованные данные к таблице.
-        reviewTable.setItems(filteredData);
+        SortedList<ReviewDto> sortedData = new SortedList<>(filteredData);
+        sortedData.comparatorProperty().bind(reviewTable.comparatorProperty());
+
+        reviewTable.setItems(sortedData);
     }
+
 
     private void loadReviews() {
         new Thread(() -> {

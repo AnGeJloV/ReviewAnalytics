@@ -97,3 +97,35 @@
 .default-color2.chart-bar { -fx-bar-fill: #666666; }
 .default-color3.chart-bar { -fx-bar-fill: #4D4D4D; }
 .default-color4.chart-bar { -fx-bar-fill: #333333; }
+
+/* --- Стили для таблицы --- */
+.table-view .column-header .label {
+    -fx-font-weight: bold;
+    -fx-alignment: CENTER_LEFT;
+}
+
+.table-view .column-header:hover {
+    -fx-background-color: #f0f0f0; /* Легкая подсветка при наведении */
+}
+
+/* --- Стили для PieChart --- */
+/* Задаем градиент серого для секторов */
+.pie-chart .default-color0.chart-pie { -fx-pie-color: #333333; } /* Самый темный */
+.pie-chart .default-color1.chart-pie { -fx-pie-color: #4D4D4D; }
+.pie-chart .default-color2.chart-pie { -fx-pie-color: #666666; }
+.pie-chart .default-color3.chart-pie { -fx-pie-color: #808080; }
+.pie-chart .default-color4.chart-pie { -fx-pie-color: #999999; }
+.pie-chart .default-color5.chart-pie { -fx-pie-color: #B3B3B3; }
+.pie-chart .default-color6.chart-pie { -fx-pie-color: #CCCCCC; }
+.pie-chart .default-color7.chart-pie { -fx-pie-color: #E0E0E0; } /* Самый светлый */
+
+/* Стиль для линий, отделяющих сектора */
+.pie-chart .chart-pie {
+    -fx-border-color: white;
+    -fx-border-width: 1px;
+}
+
+/* Стиль для легенды */
+.pie-chart .chart-legend {
+    -fx-background-color: transparent;
+}

@@ -19,7 +19,14 @@
 
     </HBox>
 
-    <TableView fx:id="reviewTable" VBox.vgrow="ALWAYS"/>
+    <TableView fx:id="reviewTable" VBox.vgrow="ALWAYS">
+        <columns>
+            <TableColumn fx:id="productCol" prefWidth="350.0" text="Товар" />
+            <TableColumn fx:id="ratingCol" prefWidth="120.0" text="Интегр. рейтинг" />
+            <TableColumn fx:id="dateCol" prefWidth="150.0" text="Дата" />
+            <TableColumn fx:id="statusCol" prefWidth="100.0" text="Статус" />
+        </columns>
+    </TableView>
 
     <HBox spacing="10" alignment="CENTER_RIGHT">
         <Button text="Добавить отзыв..." onAction="#handleAddReview"/>
