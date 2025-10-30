@@ -122,4 +122,26 @@ public class AnalyticsController {
         private LocalDate endDate;
         private Long categoryId;
     }
+
+    @PostMapping("/product/{productId}/export-pdf")
+    public ResponseEntity<byte[]> exportProductDetailsPdf(
+            @PathVariable Long productId,
+            @RequestPart("chart") MultipartFile chart
+    ) throws IOException {
+
+        // 1. Получаем все данные по товару
+        ProductDetailsDto detailsData = analyticsService.getProductDetails(productId);
+
+        // 2. Генерируем PDF, передавая данные и снимок графика
+        byte[] pdfContents = pdfGenerationService.generateProductDetailsPdf(detailsData, chart.getBytes());
+
+        // 3. Формируем ответ
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_PDF);
+        String fileName = "product_report_" + productId + ".pdf";
+        headers.setContentDispositionFormData("attachment", fileName);
+        headers.setContentLength(pdfContents.length);
+
+        return new ResponseEntity<>(pdfContents, headers, HttpStatus.OK);
+    }
 }

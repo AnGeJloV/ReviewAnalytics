@@ -17,11 +17,23 @@ import javafx.scene.paint.Color;
 import javafx.fxml.FXML;
 import javafx.scene.shape.Circle;
 import javafx.scene.layout.FlowPane;
+import javafx.scene.layout.VBox;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+
+import javafx.event.ActionEvent;
+import javafx.stage.FileChooser;
+import java.io.File;
+import java.nio.file.Files;
+import javafx.embed.swing.SwingFXUtils;
+import javafx.scene.SnapshotParameters;
+import javafx.scene.image.WritableImage;
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
 
 
 public class ProductDetailsController {
@@ -36,6 +48,7 @@ public class ProductDetailsController {
     @FXML private PieChart criteriaProfileChart;
     @FXML private FlowPane customLegendPane;
     @FXML private CheckBox compareCheckBox;
+    @FXML private VBox pieChartContainer;
 
     private final AnalyticsService analyticsService = new AnalyticsService();
     private Long productId;
@@ -272,5 +285,70 @@ public class ProductDetailsController {
      */
     private void updateCompareCheckBoxState() {
         compareCheckBox.setSelected(ComparisonService.getInstance().contains(this.productId));
+    }
+
+    @FXML
+    void exportDetailsToPdf(ActionEvent event) {
+        if (this.productId == null) return;
+
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Сохранить отчет по товару");
+        fileChooser.setInitialFileName("product_report_" + this.productId + ".pdf");
+        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("PDF Documents", "*.pdf"));
+        File file = fileChooser.showSaveDialog(productNameLabel.getScene().getWindow());
+
+        if (file != null) {
+            try {
+                // Делаем снимок PieChart
+                byte[] chartSnapshot = snapshotNode(pieChartContainer);
+
+                new Thread(() -> {
+                    try {
+                        byte[] pdfData = analyticsService.getProductDetailsPdf(this.productId, chartSnapshot);
+                        Files.write(file.toPath(), pdfData);
+
+                        Platform.runLater(() -> {
+                            Alert alert = new Alert(Alert.AlertType.INFORMATION, "Отчет успешно сохранен: " + file.getAbsolutePath());
+                            alert.setTitle("Успех");
+                            alert.setHeaderText(null);
+                            alert.showAndWait();
+                        });
+                    } catch (IOException e) {
+                        Platform.runLater(() -> {
+                            Alert alert = new Alert(Alert.AlertType.ERROR, e.getMessage());
+                            alert.setTitle("Ошибка сохранения");
+                            alert.setHeaderText("Не удалось сформировать или сохранить отчет.");
+                            alert.showAndWait();
+                        });
+                        e.printStackTrace();
+                    }
+                }).start();
+
+            } catch (IOException e) {
+                Alert alert = new Alert(Alert.AlertType.ERROR, e.getMessage());
+                alert.setTitle("Ошибка снимка");
+                alert.setHeaderText("Не удалось сделать снимок графика.");
+                alert.showAndWait();
+                e.printStackTrace();
+            }
+        }
+    }
+
+    /**
+     * Вспомогательный метод для создания снимка любого JavaFX узла (Node) и преобразования его в byte[].
+     */
+    private byte[] snapshotNode(Node node) throws IOException {
+        WritableImage image = node.snapshot(new SnapshotParameters(), null);
+
+        BufferedImage bufferedImage = SwingFXUtils.fromFXImage(image, null);
+        BufferedImage imageWithBackground = new BufferedImage(bufferedImage.getWidth(), bufferedImage.getHeight(), BufferedImage.TYPE_INT_RGB);
+        imageWithBackground.getGraphics().setColor(java.awt.Color.WHITE);
+        imageWithBackground.getGraphics().fillRect(0, 0, bufferedImage.getWidth(), bufferedImage.getHeight());
+        imageWithBackground.getGraphics().drawImage(bufferedImage, 0, 0, null);
+
+        try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+            ImageIO.write(imageWithBackground, "png", outputStream);
+            return outputStream.toByteArray();
+        }
     }
 }

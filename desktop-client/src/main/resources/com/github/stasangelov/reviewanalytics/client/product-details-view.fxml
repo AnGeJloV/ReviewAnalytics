@@ -19,6 +19,7 @@
             <Label fx:id="productNameLabel" styleClass="dashboard-title" text="Название товара..." />
             <Region HBox.hgrow="ALWAYS" />
             <CheckBox fx:id="compareCheckBox" onAction="#handleToggleCompare" text="Добавить к сравнению" />
+            <Button onAction="#exportDetailsToPdf" text="Экспорт в PDF" style="-fx-margin-left: 10px;"/>
         </HBox>
 
         <!-- СЕКЦИЯ KPI -->
@@ -51,14 +52,10 @@
                 <RowConstraints minHeight="10.0" vgrow="SOMETIMES" />
             </rowConstraints>
             <children>
-                <!-- ПРОФИЛЬ КРИТЕРИЕВ (место для RadarChart) -->
-                <VBox prefHeight="490.0" prefWidth="481.0" styleClass="chart-card">
+
+                <VBox fx:id="pieChartContainer" prefHeight="490.0" prefWidth="481.0" styleClass="chart-card">
                     <Label styleClass="chart-title" text="Профиль сильных/слабых сторон" />
-
-                    <!-- PieChart теперь занимает верхнюю часть VBox -->
                     <PieChart fx:id="criteriaProfileChart" VBox.vgrow="ALWAYS" />
-
-                    <!-- Контейнер для кастомной легенды теперь внизу -->
                     <FlowPane fx:id="customLegendPane" alignment="CENTER" hgap="15" vgap="5" style="-fx-padding: 10;" />
                 </VBox>
 

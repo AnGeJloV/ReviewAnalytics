@@ -193,4 +193,27 @@ public class AnalyticsService {
         private Long categoryId;
     }
 
+    public byte[] getProductDetailsPdf(Long productId, byte[] chartImage) throws IOException {
+        String url = BASE_URL + "/product/" + productId + "/export-pdf";
+
+        RequestBody requestBody = new MultipartBody.Builder()
+                .setType(MultipartBody.FORM)
+                .addFormDataPart("chart", "criteriaProfileChart.png", RequestBody.create(chartImage, PNG))
+                .build();
+
+        Request request = new Request.Builder()
+                .url(url)
+                .post(requestBody)
+                .build();
+
+        try (Response response = client.newCall(request).execute()) {
+            if (response.isSuccessful()) {
+                return response.body().bytes();
+            } else {
+                handleError(response);
+                return null;
+            }
+        }
+    }
+
 }
