@@ -8,7 +8,6 @@ package com.github.stasangelov.reviewanalytics.client.service;
  * - {@code onError}: Ошибка на стороне сервера (например, неверные данные, код 4xx или 5xx).
  * @param <T> Тип объекта, который ожидается получить при успешном ответе.
  */
-
 public interface ApiCallback<T> {
     void onSuccess(T result);
     void onFailure(Exception e);

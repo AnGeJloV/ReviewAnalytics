@@ -15,13 +15,11 @@ import java.io.IOException;
  * Предоставляет статические методы для загрузки FXML-файлов и их установки в текущее окно (Stage),
  * скрывая повторяющийся код, связанный с переключением.
  */
-
 public class ViewSwitcher {
 
     /**
-     * Переключает сцену в указанном окне (Stage).
-     * @param stage Окно, в котором нужно сменить сцену.
-     * @param fxmlFile FXML-файл новой сцены.
+     * Переключает сцену в указанном окне.
+     * Это основной, универсальный метод для смены вида.
      */
     public static void switchScene(Stage stage, String fxmlFile) {
         try {
@@ -35,8 +33,8 @@ public class ViewSwitcher {
     }
 
     /**
-     * Старый метод, который работает для событий от Node (например, кнопок).
-     * Мы его оставим, так как он используется в других местах.
+     * Удобный метод-обертка, который извлекает Stage из события (например, нажатия кнопки)
+     * и вызывает основной метод `switchScene`.
      */
     public static void switchScene(ActionEvent event, String fxmlFile) {
         Node source = (Node) event.getSource();
@@ -44,6 +42,10 @@ public class ViewSwitcher {
         switchScene(stage, fxmlFile);
     }
 
+    /**
+     * Специализированный метод для перехода на главный экран приложения.
+     * Загружает `main-view.fxml`, устанавливает предопределенный размер окна и заголовок.
+     */
     public static void switchToMainView(ActionEvent event) {
         try {
             FXMLLoader fxmlLoader = new FXMLLoader(ClientApplication.class.getResource("main-view.fxml"));
@@ -57,6 +59,10 @@ public class ViewSwitcher {
         }
     }
 
+    /**
+     * Показывает новое модальное (всплывающее) окно поверх текущего.
+     * Основное окно блокируется до тех пор, пока модальное не будет закрыто.
+     */
     public static void showModalWindow(String fxmlFile, String title) throws IOException {
         FXMLLoader fxmlLoader = new FXMLLoader(ClientApplication.class.getResource(fxmlFile));
         Scene scene = new Scene(fxmlLoader.load());

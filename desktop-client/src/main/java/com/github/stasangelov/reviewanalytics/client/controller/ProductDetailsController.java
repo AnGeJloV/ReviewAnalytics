@@ -1,8 +1,13 @@
 package com.github.stasangelov.reviewanalytics.client.controller;
 
-import com.github.stasangelov.reviewanalytics.client.model.*;
+import com.github.stasangelov.reviewanalytics.client.model.analytics.comparison.CriteriaProfileDto;
+import com.github.stasangelov.reviewanalytics.client.model.analytics.product.ProductDetailsDto;
+import com.github.stasangelov.reviewanalytics.client.model.analytics.product.ProductSummaryDto;
+import com.github.stasangelov.reviewanalytics.client.model.review.ReviewDto;
+import com.github.stasangelov.reviewanalytics.client.model.review.ReviewRatingDto;
 import com.github.stasangelov.reviewanalytics.client.service.AnalyticsService;
 import com.github.stasangelov.reviewanalytics.client.service.ComparisonService;
+import com.github.stasangelov.reviewanalytics.client.util.AlertFactory;
 import javafx.application.Platform;
 
 import javafx.beans.property.SimpleObjectProperty;
@@ -18,12 +23,10 @@ import javafx.fxml.FXML;
 import javafx.scene.shape.Circle;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.VBox;
-
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
-
 import javafx.event.ActionEvent;
 import javafx.stage.FileChooser;
 import java.io.File;
@@ -35,7 +38,11 @@ import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 
-
+/**
+ * Контроллер для модального окна "Детализация по товару".
+ * Отвечает за загрузку и отображение всей подробной информации о конкретном товаре:
+ * KPI, профиль критериев (PieChart) и полный список отзывов в таблице.
+ */
 public class ProductDetailsController {
 
     // --- @FXML Поля ---
@@ -50,12 +57,30 @@ public class ProductDetailsController {
     @FXML private CheckBox compareCheckBox;
     @FXML private VBox pieChartContainer;
 
+    // --- Зависимости и состояние ---
     private final AnalyticsService analyticsService = new AnalyticsService();
     private Long productId;
     private ProductSummaryDto productSummary;
 
+    //================================================================================
+    // Инициализация и настройка
+    //================================================================================
+
     /**
-     * Метод для передачи ID товара из главного окна.
+     * Вызывается после загрузки FXML-файла.
+     * Настраивает начальное состояние PieChart.
+     */
+    @FXML
+    public void initialize() {
+        criteriaProfileChart.setLegendVisible(false);
+        criteriaProfileChart.setLabelsVisible(false);
+        criteriaProfileChart.setLabelLineLength(0);
+    }
+
+    /**
+     * Устанавливает ID товара для отображения.
+     * Это точка входа для контроллера, вызывается извне.
+     * @param productId ID товара.
      */
     public void setProductId(Long productId) {
         this.productId = productId;
@@ -63,14 +88,77 @@ public class ProductDetailsController {
         setupPieChart();
     }
 
+    //================================================================================
+    // Обработчики событий (FXML)
+    //================================================================================
+
+    /**
+     * Обрабатывает изменение состояния CheckBox "Добавить к сравнению".
+     * Добавляет или удаляет текущий товар из ComparisonService.
+     */
     @FXML
-    public void initialize() {
-        // Метод setupReviewsTable будет вызываться после загрузки данных
-        criteriaProfileChart.setLegendVisible(false); // Отключаем стандартную легенду
-        criteriaProfileChart.setLabelsVisible(false); // Отключаем стандартные метки на секторах
-        criteriaProfileChart.setLabelLineLength(0);   // Убираем линии, ведущие к меткам
+    private void handleToggleCompare() {
+        if (this.productSummary == null) return;
+
+        if (compareCheckBox.isSelected()) {
+            boolean success = ComparisonService.getInstance().addProduct(this.productSummary);
+            if (!success) {
+                compareCheckBox.setSelected(false);
+            }
+        } else {
+            ComparisonService.getInstance().removeProduct(this.productSummary);
+        }
     }
 
+    /**
+     * Обрабатывает нажатие на кнопку "Экспорт в PDF".
+     * Создает снимок графика и делегирует генерацию отчета серверу.
+     */
+    @FXML
+    void exportDetailsToPdf(ActionEvent event) {
+        if (this.productId == null) return;
+
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Сохранить отчет по товару");
+        fileChooser.setInitialFileName("product_report_" + this.productId + ".pdf");
+        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("PDF Documents", "*.pdf"));
+        File file = fileChooser.showSaveDialog(productNameLabel.getScene().getWindow());
+
+        if (file != null) {
+            try {
+                // Делаем снимок PieChart
+                byte[] chartSnapshot = snapshotNode(pieChartContainer);
+
+                new Thread(() -> {
+                    try {
+                        byte[] pdfData = analyticsService.getProductDetailsPdf(this.productId, chartSnapshot);
+                        Files.write(file.toPath(), pdfData);
+
+                        Platform.runLater(() -> {
+                            AlertFactory.showInfo("Отчет успешно сохранен", "Файл сохранен по пути: " + file.getAbsolutePath());
+                        });
+                    } catch (IOException e) {
+                        Platform.runLater(() -> {
+                            AlertFactory.showError("Не удалось сформировать или сохранить отчет", e.getMessage());
+                        });
+                        e.printStackTrace();
+                    }
+                }).start();
+
+            } catch (IOException e) {
+                AlertFactory.showError("Не удалось сделать снимок графика", e.getMessage());
+                e.printStackTrace();
+            }
+        }
+    }
+
+    //================================================================================
+    // Логика загрузки и обновления UI
+    //================================================================================
+
+    /**
+     * Асинхронно загружает с сервера всю детализированную информацию по товару.
+     */
     private void loadProductDetails() {
         if (productId == null) return;
         new Thread(() -> {
@@ -85,8 +173,10 @@ public class ProductDetailsController {
         }).start();
     }
 
+    /**
+     * Обновляет все элементы UI на основе полученных с сервера данных.
+     */
     private void updateUi(ProductDetailsDto details) {
-        // Сохраняем сводную информацию о товаре
         this.productSummary = new ProductSummaryDto(
                 details.getProductId(),
                 details.getProductName(),
@@ -96,7 +186,6 @@ public class ProductDetailsController {
                 details.getAverageRating()
         );
 
-        // Обновляем состояние чекбокса
         updateCompareCheckBoxState();
 
         productNameLabel.setText(details.getProductName());
@@ -110,89 +199,7 @@ public class ProductDetailsController {
     }
 
     /**
-     * Динамически создает колонки и заполняет таблицу отзывов.
-     * @param reviews Список отзывов.
-     * @param criteria Профиль критериев (для получения названий колонок).
-     */
-    private void setupAndPopulateReviewsTable(List<ReviewDto> reviews, List<CriteriaProfileDto> criteria) {
-        reviewsTable.getColumns().clear();
-        if (reviews == null || criteria == null) return;
-
-        // 1. Создаем статические колонки
-        TableColumn<ReviewDto, LocalDateTime> dateCol = new TableColumn<>("Дата");
-        dateCol.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().getDateCreated()));
-        dateCol.setPrefWidth(150);
-        // Форматируем дату
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
-        dateCol.setCellFactory(col -> new TableCell<>() {
-            @Override
-            protected void updateItem(LocalDateTime item, boolean empty) {
-                super.updateItem(item, empty);
-                setText(empty ? null : formatter.format(item));
-            }
-        });
-
-        TableColumn<ReviewDto, Double> ratingCol = new TableColumn<>("Интегр. рейтинг");
-        ratingCol.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().getIntegralRating()));
-        ratingCol.setPrefWidth(120);
-        ratingCol.setCellFactory(col -> new TableCell<>() {
-            @Override
-            protected void updateItem(Double item, boolean empty) {
-                super.updateItem(item, empty);
-                setText(empty || item == null ? null : String.format("%.2f", item));
-            }
-        });
-
-        reviewsTable.getColumns().addAll(dateCol, ratingCol);
-
-        // 2. Создаем динамические колонки для каждого критерия
-        for (CriteriaProfileDto criterion : criteria) {
-            TableColumn<ReviewDto, Integer> criterionCol = new TableColumn<>(criterion.getCriterionName());
-            criterionCol.setPrefWidth(120);
-
-            criterionCol.setCellValueFactory(cellData -> {
-                // Для каждой строки (отзыва) ищем оценку по текущему критерию
-                ReviewDto review = cellData.getValue();
-                Integer ratingValue = review.getReviewRatings().stream()
-                        .filter(r -> r.getCriterionName().equals(criterion.getCriterionName()))
-                        .map(ReviewRatingDto::getRating)
-                        .findFirst()
-                        .orElse(null); // Если оценки нет, ячейка будет пустой
-                return new SimpleObjectProperty<>(ratingValue);
-            });
-
-            reviewsTable.getColumns().add(criterionCol);
-        }
-
-        // 3. Заполняем таблицу данными
-        reviewsTable.setItems(FXCollections.observableArrayList(reviews));
-    }
-
-    /**
-     * Настраивает PieChart, добавляя "слушателя" для установки подсказок и стилей.
-     */
-    private void setupPieChart() {
-        // Этот "слушатель" будет срабатывать каждый раз, когда в график добавляются новые данные
-        criteriaProfileChart.dataProperty().addListener((obs, oldData, newData) -> {
-            if (newData == null) return;
-
-            // Считаем общую сумму для расчета процентов
-            double totalValue = newData.stream().mapToDouble(PieChart.Data::getPieValue).sum();
-
-            // Проходим по новым данным и настраиваем каждый сектор
-            newData.forEach(data -> {
-                Node node = data.getNode();
-                if (node != null) {
-                    double percentage = (data.getPieValue() / totalValue) * 100;
-                    String tooltipText = String.format("%s: %.2f (%.1f%%)", data.getName(), data.getPieValue(), percentage);
-                    Tooltip.install(node, new Tooltip(tooltipText));
-                }
-            });
-        });
-    }
-
-    /**
-     * Обновляет PieChart и создает кастомную легенду.
+     * Обновляет PieChart данными о среднем рейтинге по критериям.
      */
     private void updateCriteriaProfileChart(List<CriteriaProfileDto> data) {
         if (data == null || data.isEmpty()) {
@@ -218,8 +225,95 @@ public class ProductDetailsController {
     }
 
     /**
-     * Проходит по отрисованным секторам, применяет стили,
-     * устанавливает Tooltip и строит кастомную легенду.
+     * Обновляет состояние CheckBox в зависимости от того,
+     * находится ли товар в списке для сравнения.
+     */
+    private void updateCompareCheckBoxState() {
+        compareCheckBox.setSelected(ComparisonService.getInstance().contains(this.productId));
+    }
+
+    /**
+     * Настраивает таблицу, динамически создавая колонки для каждого критерия
+     * и заполняя ее списком отзывов.
+     */
+    private void setupAndPopulateReviewsTable(List<ReviewDto> reviews, List<CriteriaProfileDto> criteria) {
+        reviewsTable.getColumns().clear();
+        if (reviews == null || criteria == null) return;
+
+        TableColumn<ReviewDto, LocalDateTime> dateCol = new TableColumn<>("Дата");
+        dateCol.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().getDateCreated()));
+        dateCol.setPrefWidth(150);
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+        dateCol.setCellFactory(col -> new TableCell<>() {
+            @Override
+            protected void updateItem(LocalDateTime item, boolean empty) {
+                super.updateItem(item, empty);
+                setText(empty ? null : formatter.format(item));
+            }
+        });
+
+        TableColumn<ReviewDto, Double> ratingCol = new TableColumn<>("Интегр. рейтинг");
+        ratingCol.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().getIntegralRating()));
+        ratingCol.setPrefWidth(120);
+        ratingCol.setCellFactory(col -> new TableCell<>() {
+            @Override
+            protected void updateItem(Double item, boolean empty) {
+                super.updateItem(item, empty);
+                setText(empty || item == null ? null : String.format("%.2f", item));
+            }
+        });
+
+        reviewsTable.getColumns().addAll(dateCol, ratingCol);
+
+        for (CriteriaProfileDto criterion : criteria) {
+            TableColumn<ReviewDto, Integer> criterionCol = new TableColumn<>(criterion.getCriterionName());
+            criterionCol.setPrefWidth(120);
+
+            criterionCol.setCellValueFactory(cellData -> {
+                ReviewDto review = cellData.getValue();
+                Integer ratingValue = review.getReviewRatings().stream()
+                        .filter(r -> r.getCriterionName().equals(criterion.getCriterionName()))
+                        .map(ReviewRatingDto::getRating)
+                        .findFirst()
+                        .orElse(null);
+                return new SimpleObjectProperty<>(ratingValue);
+            });
+
+            reviewsTable.getColumns().add(criterionCol);
+        }
+
+        reviewsTable.setItems(FXCollections.observableArrayList(reviews));
+    }
+
+    //================================================================================
+    // Вспомогательные методы
+    //================================================================================
+
+    /**
+     * Настраивает PieChart, добавляя "слушателя" для последующей
+     * установки всплывающих подсказок.
+     */
+    private void setupPieChart() {
+        criteriaProfileChart.dataProperty().addListener((obs, oldData, newData) -> {
+            if (newData == null) return;
+
+            double totalValue = newData.stream().mapToDouble(PieChart.Data::getPieValue).sum();
+
+            newData.forEach(data -> {
+                Node node = data.getNode();
+                if (node != null) {
+                    double percentage = (data.getPieValue() / totalValue) * 100;
+                    String tooltipText = String.format("%s: %.2f (%.1f%%)", data.getName(), data.getPieValue(), percentage);
+                    Tooltip.install(node, new Tooltip(tooltipText));
+                }
+            });
+        });
+    }
+
+    /**
+     * Проходит по уже отрисованным секторам PieChart, применяет к ним
+     * кастомные стили (цвета), устанавливает Tooltip и строит
+     * динамическую легенду в {@code customLegendPane}.
      */
     private void applyTooltipsAndStyles(double totalValue) {
         // Очищаем старую легенду
@@ -264,78 +358,7 @@ public class ProductDetailsController {
     }
 
     /**
-     * НОВЫЙ МЕТОД: Обработчик для CheckBox.
-     */
-    @FXML
-    private void handleToggleCompare() {
-        if (this.productSummary == null) return;
-
-        if (compareCheckBox.isSelected()) {
-            boolean success = ComparisonService.getInstance().addProduct(this.productSummary);
-            if (!success) {
-                compareCheckBox.setSelected(false);
-            }
-        } else {
-            ComparisonService.getInstance().removeProduct(this.productSummary);
-        }
-    }
-
-    /**
-     * Обновляет состояние CheckBox в зависимости от того, есть ли товар в сравнении.
-     */
-    private void updateCompareCheckBoxState() {
-        compareCheckBox.setSelected(ComparisonService.getInstance().contains(this.productId));
-    }
-
-    @FXML
-    void exportDetailsToPdf(ActionEvent event) {
-        if (this.productId == null) return;
-
-        FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("Сохранить отчет по товару");
-        fileChooser.setInitialFileName("product_report_" + this.productId + ".pdf");
-        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("PDF Documents", "*.pdf"));
-        File file = fileChooser.showSaveDialog(productNameLabel.getScene().getWindow());
-
-        if (file != null) {
-            try {
-                // Делаем снимок PieChart
-                byte[] chartSnapshot = snapshotNode(pieChartContainer);
-
-                new Thread(() -> {
-                    try {
-                        byte[] pdfData = analyticsService.getProductDetailsPdf(this.productId, chartSnapshot);
-                        Files.write(file.toPath(), pdfData);
-
-                        Platform.runLater(() -> {
-                            Alert alert = new Alert(Alert.AlertType.INFORMATION, "Отчет успешно сохранен: " + file.getAbsolutePath());
-                            alert.setTitle("Успех");
-                            alert.setHeaderText(null);
-                            alert.showAndWait();
-                        });
-                    } catch (IOException e) {
-                        Platform.runLater(() -> {
-                            Alert alert = new Alert(Alert.AlertType.ERROR, e.getMessage());
-                            alert.setTitle("Ошибка сохранения");
-                            alert.setHeaderText("Не удалось сформировать или сохранить отчет.");
-                            alert.showAndWait();
-                        });
-                        e.printStackTrace();
-                    }
-                }).start();
-
-            } catch (IOException e) {
-                Alert alert = new Alert(Alert.AlertType.ERROR, e.getMessage());
-                alert.setTitle("Ошибка снимка");
-                alert.setHeaderText("Не удалось сделать снимок графика.");
-                alert.showAndWait();
-                e.printStackTrace();
-            }
-        }
-    }
-
-    /**
-     * Вспомогательный метод для создания снимка любого JavaFX узла (Node) и преобразования его в byte[].
+     * Создает снимок любого JavaFX узла (Node) и преобразует его в массив байт.
      */
     private byte[] snapshotNode(Node node) throws IOException {
         WritableImage image = node.snapshot(new SnapshotParameters(), null);
@@ -351,5 +374,4 @@ public class ProductDetailsController {
             return outputStream.toByteArray();
         }
     }
-
 }

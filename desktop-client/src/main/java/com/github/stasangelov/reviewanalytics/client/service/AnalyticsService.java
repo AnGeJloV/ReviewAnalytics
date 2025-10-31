@@ -2,41 +2,50 @@ package com.github.stasangelov.reviewanalytics.client.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.github.stasangelov.reviewanalytics.client.model.*;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.github.stasangelov.reviewanalytics.client.model.analytics.comparison.ComparisonDataDto;
+import com.github.stasangelov.reviewanalytics.client.model.analytics.dashboard.DashboardDto;
+import com.github.stasangelov.reviewanalytics.client.model.analytics.product.ProductDetailsDto;
+import com.github.stasangelov.reviewanalytics.client.model.analytics.product.ProductSummaryDto;
+import com.github.stasangelov.reviewanalytics.client.model.common.ErrorResponseDto;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import okhttp3.*;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import java.util.Map;
-
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 /**
- * Сервис для получения агрегированных аналитических данных с сервера.
+ * Сервис для взаимодействия с эндпоинтами аналитики на сервере (`/api/analytics`).
+ * Отвечает за получение всех агрегированных данных для дашборда, страниц
+ * детализации и сравнения, а также за формирование запросов для экспорта в PDF.
  */
 public class AnalyticsService {
+
+    // --- Константы и зависимости ---
     private static final String BASE_URL = "http://localhost:8080/api/analytics";
     private final OkHttpClient client = HttpClientService.getClient();
     private final ObjectMapper objectMapper = new ObjectMapper();
     private static final MediaType PNG = MediaType.parse("image/png");
 
+    /**
+     * Конструктор. Регистрирует модуль для корректной работы с типами Java 8 Date/Time.
+     */
     public AnalyticsService() {
         objectMapper.registerModule(new JavaTimeModule());
     }
 
+    //================================================================================
+    // Запросы на получение аналитических данных (JSON)
+    //================================================================================
+
     /**
-     * Запрашивает данные для дашборда с учетом фильтров.
-     * @param startDate Начальная дата (может быть null).
-     * @param endDate Конечная дата (может быть null).
-     * @param categoryId ID категории (может быть null).
-     * @return DashboardDto.
+     * Запрашивает данные для главной информационной панели с учетом фильтров.
      */
     public DashboardDto getDashboardData(LocalDate startDate, LocalDate endDate, Long categoryId) throws IOException {
-        // Используем HttpUrl.Builder для безопасного построения URL с параметрами
         HttpUrl.Builder urlBuilder = HttpUrl.parse(BASE_URL + "/dashboard").newBuilder();
 
         if (startDate != null) {
@@ -65,19 +74,7 @@ public class AnalyticsService {
     }
 
     /**
-     * Вспомогательный метод для обработки ошибочного ответа.
-     */
-    private void handleError(Response response) throws IOException {
-        String errorBody = response.body().string();
-        try {
-            ErrorResponseDto errorDto = objectMapper.readValue(errorBody, ErrorResponseDto.class);
-            throw new ApiException(response.code(), errorDto.getMessage());
-        } catch (Exception e) {
-            throw new ApiException(response.code(), "Не удалось распознать ошибку: " + errorBody);
-        }
-    }
-    /**
-     * НОВЫЙ МЕТОД: Запрашивает сводную информацию по товарам для таблицы.
+     * Запрашивает сводную информацию по товарам для главной таблицы.
      */
     public List<ProductSummaryDto> getProductsSummary(LocalDate startDate, LocalDate endDate, Long categoryId) throws IOException {
         HttpUrl.Builder urlBuilder = HttpUrl.parse(BASE_URL + "/products-summary").newBuilder();
@@ -99,15 +96,17 @@ public class AnalyticsService {
 
         try (Response response = client.newCall(request).execute()) {
             if (response.isSuccessful()) {
-                return objectMapper.readValue(response.body().string(), new TypeReference<>() {});
+                return objectMapper.readValue(response.body().string(), new TypeReference<>() {
+                });
             } else {
                 handleError(response);
                 return null;
             }
         }
     }
+
     /**
-     * НОВЫЙ МЕТОД: Запрашивает детализированную информацию по одному товару.
+     * Запрашивает детализированную информацию по одному товару.
      */
     public ProductDetailsDto getProductDetails(Long productId) throws IOException {
         Request request = new Request.Builder()
@@ -124,8 +123,9 @@ public class AnalyticsService {
             }
         }
     }
+
     /**
-     * НОВЫЙ МЕТОД: Отправляет список ID товаров и получает данные для сравнения.
+     * Отправляет список ID товаров и получает данные для их сравнения.
      */
     public List<ComparisonDataDto> getComparisonData(List<Long> productIds) throws IOException {
         String json = objectMapper.writeValueAsString(productIds);
@@ -137,16 +137,21 @@ public class AnalyticsService {
 
         try (Response response = client.newCall(request).execute()) {
             if (response.isSuccessful()) {
-                return objectMapper.readValue(response.body().string(), new TypeReference<>() {});
+                return objectMapper.readValue(response.body().string(), new TypeReference<>() {
+                });
             } else {
                 handleError(response);
                 return null;
             }
         }
     }
+
+    //================================================================================
+    // Запросы на экспорт в PDF (возвращают byte[])
+    //================================================================================
+
     /**
-     * Запрашивает PDF-отчет для дашборда.
-     * Возвращает массив байт, представляющий PDF-файл.
+     * Формирует и отправляет multipart-запрос для генерации PDF-отчета по дашборду.
      */
     public byte[] getDashboardPdf(LocalDate startDate, LocalDate endDate, Long categoryId, Map<String, byte[]> chartImages) throws IOException {
         // 1. Создаем объект с фильтрами и сериализуем его в JSON
@@ -184,15 +189,9 @@ public class AnalyticsService {
         }
     }
 
-    // Вспомогательный класс для сериализации фильтров
-    @Data
-    @AllArgsConstructor
-    private static class DashboardFilters {
-        private LocalDate startDate;
-        private LocalDate endDate;
-        private Long categoryId;
-    }
-
+    /**
+     * Формирует и отправляет multipart-запрос для генерации PDF-отчета по странице детализации товара.
+     */
     public byte[] getProductDetailsPdf(Long productId, byte[] chartImage) throws IOException {
         String url = BASE_URL + "/product/" + productId + "/export-pdf";
 
@@ -216,6 +215,9 @@ public class AnalyticsService {
         }
     }
 
+    /**
+     * Формирует и отправляет multipart-запрос для генерации PDF-отчета по странице сравнения.
+     */
     public byte[] getComparisonPdf(List<Long> productIds, Map<String, byte[]> images) throws IOException {
         String url = BASE_URL + "/compare/export-pdf";
         String productIdsJson = objectMapper.writeValueAsString(productIds);
@@ -248,4 +250,31 @@ public class AnalyticsService {
         }
     }
 
+    //================================================================================
+    // Вспомогательные методы
+    //================================================================================
+
+    /**
+     * Обрабатывает ошибочные HTTP-ответы, парсит тело ошибки и выбрасывает кастомное исключение.
+     */
+    private void handleError(Response response) throws IOException {
+        String errorBody = response.body().string();
+        try {
+            ErrorResponseDto errorDto = objectMapper.readValue(errorBody, ErrorResponseDto.class);
+            throw new ApiException(response.code(), errorDto.getMessage());
+        } catch (Exception e) {
+            throw new ApiException(response.code(), "Не удалось распознать ошибку: " + errorBody);
+        }
+    }
+
+    /**
+     * Внутренний вспомогательный класс для удобной сериализации фильтров дашборда в JSON.
+     */
+    @Data
+    @AllArgsConstructor
+    private static class DashboardFilters {
+        private LocalDate startDate;
+        private LocalDate endDate;
+        private Long categoryId;
+    }
 }

@@ -62,7 +62,7 @@
                     <mainClass>com.github.stasangelov.reviewanalytics.client.ClientApplication</mainClass>
                 </configuration>
             </plugin>
-            <!-- Плагин для сборки "fat JAR", запускаемого по двойному клику -->
+            <!-- Плагин для сборки единого исполняемого JAR ("fat JAR") -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>

@@ -1,7 +1,6 @@
 package com.github.stasangelov.reviewanalytics.client.service;
 
 import lombok.Getter;
-
 import java.io.IOException;
 
 /**
@@ -9,12 +8,8 @@ import java.io.IOException;
  * Оно наследуется от IOException, чтобы быть совместимым с сетевыми методами,
  * но при этом несет дополнительную информацию: HTTP-статус код.
  */
-@Getter // Lombok автоматически создаст геттеры для полей
+@Getter
 public class ApiException extends IOException {
-
-    /**
-     * HTTP-статус код, полученный от сервера (например, 400, 404, 500).
-     */
     private final int statusCode;
 
     /**

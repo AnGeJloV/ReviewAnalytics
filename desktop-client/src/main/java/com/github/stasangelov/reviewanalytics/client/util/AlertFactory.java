@@ -10,8 +10,46 @@ import javafx.scene.shape.SVGPath;
 
 import java.net.URL;
 
+/**
+ * Фабрика для создания кастомизированных диалоговых окон (Alerts).
+ * Этот класс централизует создание алертов, гарантируя, что все они
+ * будут иметь единый, фирменный стиль, определенный в `dashboard.css`.
+ * Заменяет стандартные вызовы `new Alert(...)`.
+ */
 public class AlertFactory {
 
+    //================================================================================
+    // Публичные статические методы
+    //================================================================================
+
+    /**
+     * Показывает диалоговое окно с типом "Внимание" (Warning).
+     */
+    public static void showWarning(String header, String content) {
+        showAlert(Alert.AlertType.WARNING, "Внимание", header, content);
+    }
+
+    /**
+     * Показывает диалоговое окно с типом "Ошибка" (Error).
+     */
+    public static void showError(String header, String content) {
+        showAlert(Alert.AlertType.ERROR, "Ошибка", header, content);
+    }
+
+    /**
+     * Показывает диалоговое окно с типом "Информация" (Information).
+     */
+    public static void showInfo(String header, String content) {
+        showAlert(Alert.AlertType.INFORMATION, "Информация", header, content);
+    }
+
+    //================================================================================
+    // Приватный метод-конструктор
+    //================================================================================
+
+    /**
+     * Приватный универсальный метод, который создает, стилизует и показывает алерт.
+     */
     private static void showAlert(Alert.AlertType alertType, String title, String header, String content) {
         Alert alert = new Alert(alertType);
         alert.setTitle(title);
@@ -47,17 +85,5 @@ public class AlertFactory {
 
         alert.setGraphic(null);
         alert.showAndWait();
-    }
-
-    public static void showWarning(String header, String content) {
-        showAlert(Alert.AlertType.WARNING, "Внимание", header, content);
-    }
-
-    public static void showError(String header, String content) {
-        showAlert(Alert.AlertType.ERROR, "Ошибка", header, content);
-    }
-
-    public static void showInfo(String header, String content) {
-        showAlert(Alert.AlertType.INFORMATION, "Информация", header, content);
     }
 }

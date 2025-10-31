@@ -1,8 +1,12 @@
-package com.github.stasangelov.reviewanalytics.client.model;
+package com.github.stasangelov.reviewanalytics.client.model.analytics.dashboard;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Data;
 
+/**
+ * DTO для данных о распределении оценок (1-5) по одному критерию.
+ * Используется для построения StackedBarChart.
+ */
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class RatingDistributionDto {

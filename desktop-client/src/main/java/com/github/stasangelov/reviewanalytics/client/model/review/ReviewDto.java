@@ -1,4 +1,4 @@
-package com.github.stasangelov.reviewanalytics.client.model;
+package com.github.stasangelov.reviewanalytics.client.model.review;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Data;
@@ -6,6 +6,10 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * DTO для сущности "Отзыв". Используется для всех операций:
+ * чтение, создание и обновление.
+ */
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class ReviewDto {

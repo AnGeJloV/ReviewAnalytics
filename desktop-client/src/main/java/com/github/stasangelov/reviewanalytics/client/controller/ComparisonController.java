@@ -1,10 +1,11 @@
 package com.github.stasangelov.reviewanalytics.client.controller;
 
-import com.github.stasangelov.reviewanalytics.client.model.ComparisonDataDto;
-import com.github.stasangelov.reviewanalytics.client.model.CriteriaProfileDto;
-import com.github.stasangelov.reviewanalytics.client.model.ProductSummaryDto;
+import com.github.stasangelov.reviewanalytics.client.model.analytics.comparison.ComparisonDataDto;
+import com.github.stasangelov.reviewanalytics.client.model.analytics.comparison.CriteriaProfileDto;
+import com.github.stasangelov.reviewanalytics.client.model.analytics.product.ProductSummaryDto;
 import com.github.stasangelov.reviewanalytics.client.service.AnalyticsService;
 import com.github.stasangelov.reviewanalytics.client.service.ComparisonService;
+import com.github.stasangelov.reviewanalytics.client.util.AlertFactory;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
@@ -20,7 +21,6 @@ import javafx.scene.SnapshotParameters;
 import javafx.scene.chart.AreaChart;
 import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.XYChart;
-import javafx.scene.control.Alert;
 import javafx.scene.control.Label;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
@@ -45,68 +45,53 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * Контроллер для страницы "Сравнительный анализ".
+ * Отвечает за динамическое отображение данных для сравнения,
+ * а также за управление состоянием "заглушки", если данных недостаточно.
+ */
 public class ComparisonController {
 
+    // --- FXML Поля ---
     @FXML private AreaChart<String, Number> comparisonChart;
     @FXML private TableView<Map<String, Object>> comparisonTable;
     @FXML private FlowPane customLegendPane;
     @FXML private VBox areaChartContainer;
     @FXML private VBox comparisonTableContainer;
-
     @FXML private VBox placeholderPane;
     @FXML private Label placeholderLabel;
     @FXML private VBox contentPane;
 
+    // --- Зависимости ---
     private final AnalyticsService analyticsService = new AnalyticsService();
 
+    //================================================================================
+    // Инициализация
+    //================================================================================
+
+    /**
+     * Вызывается после загрузки FXML-файла.
+     * Подписывается на изменения в списке товаров для сравнения и запускает
+     * первоначальную загрузку данных.
+     */
     @FXML
     public void initialize() {
-        // Добавляем "слушателя", который будет реагировать на изменения в списке сравнения
         ComparisonService.getInstance().getItemsToCompare().addListener((ListChangeListener<ProductSummaryDto>) c -> {
             loadComparisonData();
         });
 
-        // Загружаем данные при первой загрузке вида
         loadComparisonData();
     }
 
-    public void exportViewToPdf(ActionEvent event) {
-        FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("Сохранить отчет по сравнению");
-        fileChooser.setInitialFileName("comparison_report.pdf");
-        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("PDF Documents", "*.pdf"));
-        File file = fileChooser.showSaveDialog(areaChartContainer.getScene().getWindow());
+    //================================================================================
+    // Основная логика
+    //================================================================================
 
-        if (file != null) {
-            List<Long> productIds = ComparisonService.getInstance().getItemsToCompare().stream()
-                    .map(ProductSummaryDto::getProductId)
-                    .collect(Collectors.toList());
-            if (productIds.isEmpty()) {
-                new Alert(Alert.AlertType.WARNING, "Нет товаров для сравнения.").showAndWait();
-                return;
-            }
-            try {
-                Map<String, byte[]> images = new HashMap<>();
-                images.put("comparisonChart.png", snapshotNode(areaChartContainer));
-                images.put("comparisonTable.png", snapshotNode(comparisonTableContainer));
-
-                new Thread(() -> {
-                    try {
-                        byte[] pdfData = analyticsService.getComparisonPdf(productIds, images);
-                        Files.write(file.toPath(), pdfData);
-                        Platform.runLater(() -> new Alert(Alert.AlertType.INFORMATION, "Отчет успешно сохранен: " + file.getAbsolutePath()).showAndWait());
-                    } catch (IOException e) {
-                        Platform.runLater(() -> new Alert(Alert.AlertType.ERROR, "Не удалось сформировать или сохранить отчет: " + e.getMessage()).showAndWait());
-                        e.printStackTrace();
-                    }
-                }).start();
-            } catch (IOException e) {
-                new Alert(Alert.AlertType.ERROR, "Не удалось сделать снимок: " + e.getMessage()).showAndWait();
-                e.printStackTrace();
-            }
-        }
-    }
-
+    /**
+     * Загружает данные для сравнения с сервера.
+     * Проверяет количество выбранных товаров и решает, что отображать:
+     * основной контент (таблицу и график) или заглушку с подсказкой.
+     */
     private void loadComparisonData() {
         List<Long> productIds = ComparisonService.getInstance().getItemsToCompare().stream()
                 .map(ProductSummaryDto::getProductId)
@@ -149,12 +134,19 @@ public class ComparisonController {
                     updateTable(comparisonData);
                 });
             } catch (IOException e) {
+                Platform.runLater(() -> AlertFactory.showError("Ошибка загрузки", "Не удалось получить данные для сравнения."));
                 e.printStackTrace();
             }
         }).start();
     }
 
+    //================================================================================
+    // Логика обновления UI
+    //================================================================================
 
+    /**
+     * Обновляет AreaChart на основе полученных данных.
+     */
     private void updateChart(List<ComparisonDataDto> data) {
         comparisonChart.getData().clear();
         if (data == null || data.isEmpty()) return;
@@ -185,76 +177,13 @@ public class ComparisonController {
 
         Platform.runLater(() -> {
             applyChartStylesAndLegend(seriesList);
-            adjustYAxis(data); // <-- НОВЫЙ ВЫЗОВ
+            adjustYAxis(data);
         });
     }
 
     /**
-     * НОВЫЙ МЕТОД: Динамически настраивает ось Y.
+     * Обновляет TableView, динамически создавая колонки и строки.
      */
-    private void adjustYAxis(List<ComparisonDataDto> data) {
-        NumberAxis yAxis = (NumberAxis) comparisonChart.getYAxis();
-
-        double min = data.stream()
-                .flatMap(d -> d.getCriteriaProfile().stream())
-                .mapToDouble(CriteriaProfileDto::getAverageRating)
-                .min().orElse(0.0);
-        double max = data.stream()
-                .flatMap(d -> d.getCriteriaProfile().stream())
-                .mapToDouble(CriteriaProfileDto::getAverageRating)
-                .max().orElse(5.0);
-
-        yAxis.setAutoRanging(false);
-        // Устанавливаем нижнюю границу чуть ниже минимума, но не меньше 0
-        yAxis.setLowerBound(Math.max(0, Math.floor(min - 0.5)));
-        // Устанавливаем верхнюю границу чуть выше максимума, но не больше 5
-        yAxis.setUpperBound(Math.min(5.0, Math.ceil(max)));
-        yAxis.setTickUnit(0.5);
-    }
-
-    /**
-     * Программно применяет стили к AreaChart и строит кастомную легенду.
-     */
-    private void applyChartStylesAndLegend(List<XYChart.Series<String, Number>> seriesList) {
-        customLegendPane.getChildren().clear();
-        String[] strokeColors = {"#333333", "#666666", "#999999", "#CCCCCC"};
-        String[] strokeDashArrays = {"", "5, 5", "10, 5", "2, 5"};
-
-        for (int i = 0; i < seriesList.size(); i++) {
-            XYChart.Series<String, Number> series = seriesList.get(i);
-            Node seriesNode = series.getNode();
-
-            String stroke = strokeColors[i % strokeColors.length];
-            String dash = strokeDashArrays[i % strokeDashArrays.length];
-
-            if (seriesNode != null) {
-                StringBuilder styleBuilder = new StringBuilder();
-                styleBuilder.append(String.format("-fx-fill: transparent; -fx-stroke: %s; ", stroke));
-
-                // Добавляем стиль пунктира, только если он не пустой
-                if (dash != null && !dash.isEmpty()) {
-                    styleBuilder.append(String.format("-fx-stroke-dash-array: %s; ", dash));
-                }
-
-                seriesNode.setStyle(styleBuilder.toString());
-
-                // Стили для точек (код без изменений)
-                for (XYChart.Data<String, Number> data : series.getData()) {
-                    if (data.getNode() != null) {
-                        data.getNode().setStyle(String.format("-fx-background-color: %s;", stroke));
-                    }
-                }
-            }
-
-            HBox legendEntry = new HBox(5);
-            legendEntry.setAlignment(Pos.CENTER_LEFT);
-            Circle colorCircle = new Circle(5, Color.web(stroke)); // Кружок с цветом линии
-            Label legendLabel = new Label(series.getName());
-            legendEntry.getChildren().addAll(colorCircle, legendLabel);
-            customLegendPane.getChildren().add(legendEntry);
-        }
-    }
-
     private void updateTable(List<ComparisonDataDto> data) {
         comparisonTable.getColumns().clear();
         comparisonTable.getItems().clear();
@@ -264,7 +193,7 @@ public class ComparisonController {
         // 1. Создаем первую колонку для названий критериев
         TableColumn<Map<String, Object>, String> criteriaCol = new TableColumn<>("Критерий");
         criteriaCol.setCellValueFactory(cellData -> new SimpleStringProperty((String) cellData.getValue().get("criterionName")));
-        criteriaCol.setPrefWidth(200); // Задаем ширину
+        criteriaCol.setPrefWidth(200);
         comparisonTable.getColumns().add(criteriaCol);
 
         // 2. Создаем по одной колонке на каждый товар
@@ -274,7 +203,7 @@ public class ComparisonController {
                 Double value = (Double) cellData.getValue().get(productData.getProductName());
                 return new SimpleObjectProperty<>(value);
             });
-            productCol.setPrefWidth(150); // Задаем ширину
+            productCol.setPrefWidth(150);
 
             // Добавляем форматирование и подсветку
             productCol.setCellFactory(col -> new TableCell<>() {
@@ -310,7 +239,7 @@ public class ComparisonController {
         // 3. Преобразуем данные в формат "строка-в-карте"
         List<String> allCriteria = data.stream()
                 .flatMap(d -> d.getCriteriaProfile().stream().map(CriteriaProfileDto::getCriterionName))
-                .distinct().sorted().collect(Collectors.toList());
+                .distinct().sorted().toList();
 
         ObservableList<Map<String, Object>> tableData = FXCollections.observableArrayList();
         for (String criterionName : allCriteria) {
@@ -327,8 +256,15 @@ public class ComparisonController {
         comparisonTable.setItems(tableData);
     }
 
-    @FXML
-    void exportComparisonToPdf(ActionEvent event) {
+    //================================================================================
+    // Экспорт в PDF и вспомогательные методы
+    //================================================================================
+
+    /**
+     * Обрабатывает экспорт текущего вида в PDF.
+     * Этот метод вызывается из MainController.
+     */
+    public void exportViewToPdf(ActionEvent event) {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Сохранить отчет по сравнению");
         fileChooser.setInitialFileName("comparison_report.pdf");
@@ -339,48 +275,35 @@ public class ComparisonController {
             List<Long> productIds = ComparisonService.getInstance().getItemsToCompare().stream()
                     .map(ProductSummaryDto::getProductId)
                     .collect(Collectors.toList());
-
             if (productIds.isEmpty()) {
-                new Alert(Alert.AlertType.WARNING, "Нет товаров для сравнения.").showAndWait();
+                AlertFactory.showWarning("Экспорт невозможен", "Нет товаров для сравнения.");
                 return;
             }
-
             try {
-                // --- НАЧАЛО ИЗМЕНЕНИЙ ---
-
-                // Создаем Map для хранения всех снимков
                 Map<String, byte[]> images = new HashMap<>();
-                // Делаем снимок контейнера с графиком и легендой
                 images.put("comparisonChart.png", snapshotNode(areaChartContainer));
-                // Делаем снимок таблицы
-                images.put("comparisonTable.png", snapshotNode(comparisonTable));
+                images.put("comparisonTable.png", snapshotNode(comparisonTableContainer));
 
                 new Thread(() -> {
                     try {
-                        // Передаем в сервис всю Map с изображениями
                         byte[] pdfData = analyticsService.getComparisonPdf(productIds, images);
                         Files.write(file.toPath(), pdfData);
-
-                        Platform.runLater(() -> {
-                            new Alert(Alert.AlertType.INFORMATION, "Отчет успешно сохранен: " + file.getAbsolutePath()).showAndWait();
-                        });
+                        Platform.runLater(() -> AlertFactory.showInfo("Отчет успешно сохранен", "Файл сохранен по пути: " + file.getAbsolutePath()));
                     } catch (IOException e) {
-                        Platform.runLater(() -> {
-                            new Alert(Alert.AlertType.ERROR, "Не удалось сформировать или сохранить отчет: " + e.getMessage()).showAndWait();
-                        });
+                        Platform.runLater(() -> AlertFactory.showError("Не удалось сохранить отчет", e.getMessage()));
                         e.printStackTrace();
                     }
                 }).start();
-
-                // --- КОНЕЦ ИЗМЕНЕНИЙ ---
-
             } catch (IOException e) {
-                new Alert(Alert.AlertType.ERROR, "Не удалось сделать снимок: " + e.getMessage()).showAndWait();
+                AlertFactory.showError("Не удалось сделать снимок", e.getMessage());
                 e.printStackTrace();
             }
         }
     }
 
+    /**
+     * Создает снимок любого JavaFX узла и преобразует его в byte[].
+     */
     private byte[] snapshotNode(Node node) throws IOException {
         WritableImage image = node.snapshot(new SnapshotParameters(), null);
 
@@ -393,6 +316,68 @@ public class ComparisonController {
         try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
             ImageIO.write(imageWithBackground, "png", outputStream);
             return outputStream.toByteArray();
+        }
+    }
+
+    /**
+     * Динамически настраивает ось Y у AreaChart.
+     */
+    private void adjustYAxis(List<ComparisonDataDto> data) {
+        NumberAxis yAxis = (NumberAxis) comparisonChart.getYAxis();
+
+        double min = data.stream()
+                .flatMap(d -> d.getCriteriaProfile().stream())
+                .mapToDouble(CriteriaProfileDto::getAverageRating)
+                .min().orElse(0.0);
+        double max = data.stream()
+                .flatMap(d -> d.getCriteriaProfile().stream())
+                .mapToDouble(CriteriaProfileDto::getAverageRating)
+                .max().orElse(5.0);
+
+        yAxis.setAutoRanging(false);
+        yAxis.setLowerBound(Math.max(0, Math.floor(min - 0.5)));
+        yAxis.setUpperBound(Math.min(5.0, Math.ceil(max)));
+        yAxis.setTickUnit(0.5);
+    }
+
+    /**
+     * Программно применяет стили к AreaChart и строит кастомную легенду.
+     */
+    private void applyChartStylesAndLegend(List<XYChart.Series<String, Number>> seriesList) {
+        customLegendPane.getChildren().clear();
+        String[] strokeColors = {"#333333", "#666666", "#999999", "#CCCCCC"};
+        String[] strokeDashArrays = {"", "5, 5", "10, 5", "2, 5"};
+
+        for (int i = 0; i < seriesList.size(); i++) {
+            XYChart.Series<String, Number> series = seriesList.get(i);
+            Node seriesNode = series.getNode();
+
+            String stroke = strokeColors[i % strokeColors.length];
+            String dash = strokeDashArrays[i % strokeDashArrays.length];
+
+            if (seriesNode != null) {
+                StringBuilder styleBuilder = new StringBuilder();
+                styleBuilder.append(String.format("-fx-fill: transparent; -fx-stroke: %s; ", stroke));
+
+                if (dash != null && !dash.isEmpty()) {
+                    styleBuilder.append(String.format("-fx-stroke-dash-array: %s; ", dash));
+                }
+
+                seriesNode.setStyle(styleBuilder.toString());
+
+                for (XYChart.Data<String, Number> data : series.getData()) {
+                    if (data.getNode() != null) {
+                        data.getNode().setStyle(String.format("-fx-background-color: %s;", stroke));
+                    }
+                }
+            }
+
+            HBox legendEntry = new HBox(5);
+            legendEntry.setAlignment(Pos.CENTER_LEFT);
+            Circle colorCircle = new Circle(5, Color.web(stroke));
+            Label legendLabel = new Label(series.getName());
+            legendEntry.getChildren().addAll(colorCircle, legendLabel);
+            customLegendPane.getChildren().add(legendEntry);
         }
     }
 }

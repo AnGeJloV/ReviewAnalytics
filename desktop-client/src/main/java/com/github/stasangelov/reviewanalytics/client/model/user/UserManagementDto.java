@@ -1,10 +1,14 @@
-package com.github.stasangelov.reviewanalytics.client.model;
+package com.github.stasangelov.reviewanalytics.client.model.user;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Data;
 
 import java.util.Set;
 
+/**
+ * DTO для отображения информации о пользователе на странице управления.
+ * Содержит все необходимые данные для администратора.
+ */
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class UserManagementDto {

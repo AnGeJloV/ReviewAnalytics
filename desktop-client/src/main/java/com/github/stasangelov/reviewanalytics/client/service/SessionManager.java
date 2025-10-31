@@ -9,7 +9,6 @@ import java.util.Set;
  * глобально доступном месте. Это позволяет любому другому сервису или компоненту
  * приложения получить токен для добавления в заголовки защищенных запросов.
  */
-
 public class SessionManager {
     private static SessionManager instance;
     private String token;

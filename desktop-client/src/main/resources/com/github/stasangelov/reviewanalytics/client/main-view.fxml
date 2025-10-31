@@ -5,28 +5,24 @@
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
-
 <?import javafx.scene.layout.Region?>
-<HBox prefHeight="800.0" prefWidth="1600.0" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.github.stasangelov.reviewanalytics.client.controller.MainController">
-    <stylesheets>
-        <URL value="@dashboard.css" />
-    </stylesheets>
-    <children>
-        <!-- Левая навигационная панель (загружается из отдельного файла) -->
-        <fx:include fx:id="navPanel" source="main-nav.fxml" />
 
-        <!-- Основная область контента -->
-        <BorderPane fx:id="mainContentPane" HBox.hgrow="ALWAYS">
-            <top>
-                <!-- Верхняя панель с заголовком и кнопками -->
-                <HBox fx:id="contentHeader" alignment="CENTER_LEFT" styleClass="content-header">
-                    <children>
-                        <Label fx:id="viewTitle" styleClass="content-title" text="Информационная панель" />
-                        <Region HBox.hgrow="ALWAYS" />
-                        <Button fx:id="exportButton" onAction="#exportCurrentViewToPdf" text="Экспорт в PDF" styleClass="button-secondary" />
-                    </children>
-                </HBox>
-            </top>
-        </BorderPane>
-    </children>
+<HBox prefHeight="800.0" prefWidth="1600.0" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.github.stasangelov.reviewanalytics.client.controller.MainController">
+    <stylesheets>
+        <URL value="@dashboard.css"/>
+    </stylesheets>
+
+    <fx:include fx:id="navPanel" source="main-nav.fxml"/>
+
+    <BorderPane fx:id="mainContentPane" HBox.hgrow="ALWAYS">
+        <top>
+            <HBox fx:id="contentHeader" alignment="CENTER_LEFT" styleClass="content-header">
+                <Label fx:id="viewTitle" styleClass="content-title" text="Информационная панель"/>
+                <Region HBox.hgrow="ALWAYS"/>
+                <Button fx:id="exportButton" onAction="#exportCurrentViewToPdf" text="Экспорт в PDF"
+                        styleClass="button-secondary"/>
+            </HBox>
+        </top>
+    </BorderPane>
 </HBox>

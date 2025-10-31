@@ -19,7 +19,6 @@ public class HttpClientService {
     // Статический блок инициализации. Выполняется один раз при загрузке класса.
     static {
         client = new OkHttpClient.Builder()
-                // Добавляем перехватчик, который будет "подписывать" каждый запрос.
                 .addInterceptor(new AuthInterceptor())
                 .build();
     }

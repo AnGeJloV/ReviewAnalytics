@@ -1,4 +1,4 @@
-package com.github.stasangelov.reviewanalytics.client.model;
+package com.github.stasangelov.reviewanalytics.client.model.auth;
 
 import lombok.Data;
 
@@ -6,7 +6,6 @@ import lombok.Data;
  * DTO для запроса на регистрацию нового пользователя.
  * Содержит данные, которые клиент отправляет на сервер для создания учетной записи.
  */
-
 @Data
 public class RegistrationRequest {
     private String name;

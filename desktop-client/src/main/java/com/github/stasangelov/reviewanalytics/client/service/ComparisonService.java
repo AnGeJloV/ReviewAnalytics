@@ -1,29 +1,32 @@
 package com.github.stasangelov.reviewanalytics.client.service;
 
-import com.github.stasangelov.reviewanalytics.client.model.ProductSummaryDto;
+import com.github.stasangelov.reviewanalytics.client.model.analytics.product.ProductSummaryDto;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import com.github.stasangelov.reviewanalytics.client.util.AlertFactory;
 
 /**
  * Сервис-синглтон для управления "корзиной сравнения".
- * Хранит список товаров, которые пользователь выбрал для сравнения.
- * Использует ObservableList, чтобы UI мог "слушать" изменения в списке.
+ * Хранит глобально доступный список товаров, которые пользователь выбрал для анализа.
+ * Использует {@link ObservableList}, чтобы UI мог автоматически реагировать на изменения.
  */
 public class ComparisonService {
 
+    // --- Поля и синглтон ---
     private static ComparisonService instance;
-
     // Максимальное количество товаров, которые можно добавить в сравнение
     private static final int MAX_ITEMS = 4;
-
     // ObservableList будет автоматически уведомлять "слушателей" об изменениях
     private final ObservableList<ProductSummaryDto> itemsToCompare = FXCollections.observableArrayList();
 
+    /**
+     * Приватный конструктор для реализации паттерна "Синглтон".
+     */
     private ComparisonService() {}
 
     /**
      * Возвращает единственный экземпляр сервиса.
+     * Метод синхронизирован для потокобезопасности при первом создании.
      */
     public static synchronized ComparisonService getInstance() {
         if (instance == null) {
@@ -32,15 +35,18 @@ public class ComparisonService {
         return instance;
     }
 
+    //================================================================================
+    // Публичные методы API
+    //================================================================================
+
     /**
      * Добавляет товар в список для сравнения.
-     * @param product Товар для добавления.
-     * @return true, если товар был успешно добавлен, false в противном случае (например, если лимит достигнут).
+     * Проверяет на соответствие категории и на превышение лимита.
      */
     public boolean addProduct(ProductSummaryDto product) {
         if (itemsToCompare.size() >= MAX_ITEMS) {
             AlertFactory.showWarning("Лимит достигнут", "Можно сравнивать не более " + MAX_ITEMS + " товаров одновременно.");
-            return false; // Лимит достигнут
+            return false;
         }
         if (!itemsToCompare.isEmpty()) {
             String firstCategory = itemsToCompare.get(0).getCategoryName();
@@ -50,7 +56,7 @@ public class ComparisonService {
             }
         }
         if (itemsToCompare.stream().anyMatch(p -> p.getProductId().equals(product.getProductId()))) {
-            return true; // Товар уже там, считаем это успехом
+            return true;
         }
         itemsToCompare.add(product);
         return true;
@@ -58,31 +64,28 @@ public class ComparisonService {
 
     /**
      * Удаляет товар из списка сравнения.
-     * @param product Товар для удаления.
      */
     public void removeProduct(ProductSummaryDto product) {
         itemsToCompare.removeIf(p -> p.getProductId().equals(product.getProductId()));
     }
 
     /**
-     * Возвращает наблюдаемый список товаров для сравнения.
-     * UI может привязаться к этому списку для автоматического обновления.
+     * Возвращает наблюдаемый (observable) список товаров для сравнения.
+     * UI-компоненты могут подписываться на изменения этого списка.
      */
     public ObservableList<ProductSummaryDto> getItemsToCompare() {
         return itemsToCompare;
     }
 
     /**
-     * Проверяет, находится ли товар уже в списке сравнения.
-     * @param productId ID товара для проверки.
-     * @return true, если товар в списке.
+     * Проверяет, находится ли товар с указанным ID уже в списке сравнения.
      */
     public boolean contains(Long productId) {
         return itemsToCompare.stream().anyMatch(p -> p.getProductId().equals(productId));
     }
 
     /**
-     * Очищает весь список сравнения.
+     * Полностью очищает список товаров для сравнения.
      */
     public void clear() {
         itemsToCompare.clear();

@@ -12,7 +12,6 @@ import java.io.IOException;
  * Его основная задача — инициализировать главное окно (Stage) и загрузить
  * самую первую сцену, которую увидит пользователь.
  */
-
 public class ClientApplication extends Application {
     @Override
     public void start(Stage stage) throws IOException {

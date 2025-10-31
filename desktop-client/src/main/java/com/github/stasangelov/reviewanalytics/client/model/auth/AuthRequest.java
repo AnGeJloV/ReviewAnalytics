@@ -1,11 +1,10 @@
-package com.github.stasangelov.reviewanalytics.client.model;
+package com.github.stasangelov.reviewanalytics.client.model.auth;
 
 import lombok.Data;
 
 /**
  * DTO для запроса на аутентификацию (вход в систему).
  */
-
 @Data
 public class AuthRequest {
     private String email;

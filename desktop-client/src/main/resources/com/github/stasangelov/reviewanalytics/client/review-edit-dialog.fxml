@@ -10,42 +10,44 @@
 <?import javafx.scene.control.Separator?>
 <?import javafx.scene.layout.GridPane?>
 <?import javafx.scene.layout.VBox?>
-
 <?import java.net.URL?>
-<VBox prefWidth="500.0" prefHeight="500.0" spacing="15.0" styleClass="dialog-background" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.github.stasangelov.reviewanalytics.client.controller.dialog.ReviewEditDialogController">
+
+<VBox prefWidth="500.0" prefHeight="500.0" spacing="15.0" styleClass="dialog-background"
+      xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.github.stasangelov.reviewanalytics.client.controller.dialog.ReviewEditDialogController">
 
     <stylesheets>
-        <URL value="@dashboard.css" />
+        <URL value="@dashboard.css"/>
     </stylesheets>
 
     <padding>
-        <Insets bottom="15.0" left="15.0" right="15.0" top="15.0" />
+        <Insets bottom="15.0" left="15.0" right="15.0" top="15.0"/>
     </padding>
-    <children>
-        <Label fx:id="titleLabel" styleClass="dialog-title" text="Добавление отзыва" />
-        <GridPane hgap="10.0" vgap="10.0">
-            <Label text="Товар:" GridPane.columnIndex="0" GridPane.rowIndex="0" />
-            <ComboBox fx:id="productComboBox" prefWidth="350.0" promptText="Выберите товар..." GridPane.columnIndex="1" GridPane.rowIndex="0" />
-            <Label text="Дата:" GridPane.columnIndex="0" GridPane.rowIndex="1" />
-            <DatePicker fx:id="datePicker" prefWidth="350.0" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+
+    <Label fx:id="titleLabel" styleClass="dialog-title" text="Добавление отзыва"/>
+    <GridPane hgap="10.0" vgap="10.0">
+        <Label text="Товар:" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+        <ComboBox fx:id="productComboBox" prefWidth="350.0" promptText="Выберите товар..." GridPane.columnIndex="1"
+                  GridPane.rowIndex="0"/>
+        <Label text="Дата:" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+        <DatePicker fx:id="datePicker" prefWidth="350.0" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+    </GridPane>
+
+    <Separator/>
+    <Label text="Оценки по критериям:"/>
+    <ScrollPane fx:id="criteriaScrollPane" fitToWidth="true" styleClass="criteria-scroll-pane" VBox.vgrow="ALWAYS">
+        <GridPane fx:id="criteriaGrid" hgap="10.0" vgap="10.0">
+            <padding>
+                <Insets bottom="5.0" left="5.0" right="5.0" top="5.0"/>
+            </padding>
         </GridPane>
-        <Separator />
-        <Label text="Оценки по критериям:" />
-        <ScrollPane fx:id="criteriaScrollPane" fitToWidth="true" styleClass="criteria-scroll-pane" VBox.vgrow="ALWAYS">
-            <content>
-                <GridPane fx:id="criteriaGrid" hgap="10.0" vgap="10.0">
-                    <padding>
-                        <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
-                    </padding>
-                </GridPane>
-            </content>
-        </ScrollPane>
-        <Label fx:id="errorLabel" style="-fx-text-fill: #c92a2a;" wrapText="true" />
-        <ButtonBar>
-            <buttons>
-                <Button onAction="#handleSave" styleClass="button-primary" text="Сохранить" />
-                <Button onAction="#handleCancel" styleClass="button-secondary" text="Отмена" />
-            </buttons>
-        </ButtonBar>
-    </children>
+    </ScrollPane>
+
+    <Label fx:id="errorLabel" style="-fx-text-fill: #c92a2a;" wrapText="true"/>
+    <ButtonBar>
+        <buttons>
+            <Button onAction="#handleSave" styleClass="button-primary" text="Сохранить"/>
+            <Button onAction="#handleCancel" styleClass="button-secondary" text="Отмена"/>
+        </buttons>
+    </ButtonBar>
 </VBox>

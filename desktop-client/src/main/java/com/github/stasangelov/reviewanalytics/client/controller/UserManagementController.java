@@ -1,6 +1,6 @@
 package com.github.stasangelov.reviewanalytics.client.controller;
 
-import com.github.stasangelov.reviewanalytics.client.model.UserManagementDto;
+import com.github.stasangelov.reviewanalytics.client.model.user.UserManagementDto;
 import com.github.stasangelov.reviewanalytics.client.service.ApiException;
 import com.github.stasangelov.reviewanalytics.client.service.UserService;
 import com.github.stasangelov.reviewanalytics.client.util.AlertFactory;
@@ -15,8 +15,14 @@ import javafx.scene.control.*;
 import java.io.IOException;
 import java.util.List;
 
+/**
+ * Контроллер для страницы "Управление пользователями".
+ * Отвечает за отображение списка всех пользователей и предоставляет администратору
+ * интерактивные элементы для изменения их ролей и статусов.
+ */
 public class UserManagementController {
 
+    // --- FXML Поля ---
     @FXML private TableView<UserManagementDto> usersTable;
     @FXML private TableColumn<UserManagementDto, String> nameCol;
     @FXML private TableColumn<UserManagementDto, String> emailCol;
@@ -25,15 +31,83 @@ public class UserManagementController {
     @FXML private TableColumn<UserManagementDto, Void> actionRoleCol;
     @FXML private TableColumn<UserManagementDto, Void> actionStatusCol;
 
+    // --- Зависимости и состояние ---
     private final UserService userService = new UserService();
     private final ObservableList<UserManagementDto> userList = FXCollections.observableArrayList();
 
+    //================================================================================
+    // Инициализация
+    //================================================================================
+
+    /**
+     * Вызывается после загрузки FXML-файла.
+     * Настраивает таблицу и запускает загрузку данных о пользователях.
+     */
     @FXML
     public void initialize() {
         setupTable();
         loadUsers();
     }
 
+    //================================================================================
+    // Логика работы с данными
+    //================================================================================
+
+    /**
+     * Асинхронно загружает список всех пользователей с сервера.
+     */
+    private void loadUsers() {
+        new Thread(() -> {
+            try {
+                final List<UserManagementDto> users = userService.getAllUsers();
+                Platform.runLater(() -> userList.setAll(users));
+            } catch (IOException e) {
+                Platform.runLater(() -> AlertFactory.showError("Ошибка сети", e.getMessage()));
+            }
+        }).start();
+    }
+
+    /**
+     * Отправляет на сервер запрос на изменение роли пользователя.
+     */
+    private void changeUserRole(UserManagementDto user, String newRole) {
+        new Thread(() -> {
+            try {
+                userService.changeRole(user.getId(), newRole);
+                Platform.runLater(this::loadUsers); // Перезагружаем список для обновления
+            } catch (ApiException e) {
+                Platform.runLater(() -> AlertFactory.showError("Операция запрещена", e.getMessage()));
+                Platform.runLater(this::loadUsers); // Откатываем ComboBox к старому значению
+            } catch (IOException e) {
+                Platform.runLater(() -> AlertFactory.showError("Ошибка сети", e.getMessage()));
+            }
+        }).start();
+    }
+
+    /**
+     * Отправляет на сервер запрос на изменение статуса пользователя (активен/заблокирован).
+     */
+    private void changeUserStatus(UserManagementDto user, boolean newStatus) {
+        new Thread(() -> {
+            try {
+                userService.changeStatus(user.getId(), newStatus);
+                Platform.runLater(this::loadUsers);
+            } catch (ApiException e) {
+                Platform.runLater(() -> AlertFactory.showError("Операция запрещена", e.getMessage()));
+            } catch (IOException e) {
+                Platform.runLater(() -> AlertFactory.showError("Ошибка сети", e.getMessage()));
+            }
+        }).start();
+    }
+
+    //================================================================================
+    // Настройка UI
+    //================================================================================
+
+    /**
+     * Настраивает все колонки таблицы, включая кастомные ячейки
+     * с интерактивными элементами (ComboBox и Button).
+     */
     private void setupTable() {
         usersTable.setItems(userList);
 
@@ -41,8 +115,6 @@ public class UserManagementController {
         emailCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getEmail()));
         roleCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getRole()));
         statusCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().isActive() ? "Активен" : "Заблокирован"));
-
-        // --- Колонка для смены роли ---
         actionRoleCol.setCellFactory(param -> new TableCell<>() {
             private final ComboBox<String> roleComboBox = new ComboBox<>(FXCollections.observableArrayList("ADMIN", "ANALYST"));
 
@@ -69,7 +141,6 @@ public class UserManagementController {
             }
         });
 
-        // --- Колонка для смены статуса ---
         actionStatusCol.setCellFactory(param -> new TableCell<>() {
             private final Button toggleStatusBtn = new Button();
 
@@ -93,43 +164,5 @@ public class UserManagementController {
                 }
             }
         });
-    }
-
-    private void loadUsers() {
-        new Thread(() -> {
-            try {
-                final List<UserManagementDto> users = userService.getAllUsers();
-                Platform.runLater(() -> userList.setAll(users));
-            } catch (IOException e) {
-                Platform.runLater(() -> AlertFactory.showError("Ошибка сети", e.getMessage()));
-            }
-        }).start();
-    }
-
-    private void changeUserRole(UserManagementDto user, String newRole) {
-        new Thread(() -> {
-            try {
-                userService.changeRole(user.getId(), newRole);
-                Platform.runLater(this::loadUsers); // Перезагружаем список для обновления
-            } catch (ApiException e) {
-                Platform.runLater(() -> AlertFactory.showError("Операция запрещена", e.getMessage()));
-                Platform.runLater(this::loadUsers); // Откатываем ComboBox к старому значению
-            } catch (IOException e) {
-                Platform.runLater(() -> AlertFactory.showError("Ошибка сети", e.getMessage()));
-            }
-        }).start();
-    }
-
-    private void changeUserStatus(UserManagementDto user, boolean newStatus) {
-        new Thread(() -> {
-            try {
-                userService.changeStatus(user.getId(), newStatus);
-                Platform.runLater(this::loadUsers);
-            } catch (ApiException e) {
-                Platform.runLater(() -> AlertFactory.showError("Операция запрещена", e.getMessage()));
-            } catch (IOException e) {
-                Platform.runLater(() -> AlertFactory.showError("Ошибка сети", e.getMessage()));
-            }
-        }).start();
     }
 }
