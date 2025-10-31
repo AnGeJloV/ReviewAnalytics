@@ -1,37 +1,39 @@
 <?xml version="1.0" encoding="UTF-8"?>
+
 <?import javafx.geometry.Insets?>
-<?import javafx.scene.control.*?>
-<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
 
-<VBox xmlns="http://javafx.com/javafx"
-      xmlns:fx="http://javafx.com/fxml"
-      fx:controller="com.github.stasangelov.reviewanalytics.client.controller.tabs.ReviewManagementTabController"
-      spacing="10" alignment="TOP_CENTER">
+<VBox spacing="20.0" styleClass="content-background" xmlns="http://javafx.com/javafx/17.0.12"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.github.stasangelov.reviewanalytics.client.controller.tabs.ReviewManagementTabController">
     <padding>
-        <Insets top="10" right="10" bottom="10" left="10"/>
+        <Insets bottom="20.0" left="20.0" right="20.0" top="20.0"/>
     </padding>
-
-    <HBox spacing="10" alignment="CENTER_LEFT">
-        <Label text="Управление отзывами" style="-fx-font-size: 18px; -fx-font-weight: bold;"/>
-        <Region HBox.hgrow="ALWAYS" />
-
-        <TextField fx:id="searchField" promptText="Поиск по названию товара..." prefWidth="300"/>
-
-    </HBox>
-
-    <TableView fx:id="reviewTable" VBox.vgrow="ALWAYS">
-        <columns>
-            <TableColumn fx:id="productCol" prefWidth="350.0" text="Товар" />
-            <TableColumn fx:id="ratingCol" prefWidth="120.0" text="Интегр. рейтинг" />
-            <TableColumn fx:id="dateCol" prefWidth="150.0" text="Дата" />
-            <TableColumn fx:id="statusCol" prefWidth="100.0" text="Статус" />
-        </columns>
-    </TableView>
-
-    <HBox spacing="10" alignment="CENTER_RIGHT">
-        <Button text="Добавить отзыв..." onAction="#handleAddReview"/>
-        <Button text="Редактировать..." onAction="#handleEditReview"/>
-        <Button text="Одобрить" onAction="#handleApproveReview"/>
-        <Button text="Отклонить" onAction="#handleRejectReview"/>
-    </HBox>
+    <VBox styleClass="chart-card">
+        <HBox alignment="CENTER_LEFT" spacing="10">
+            <TextField fx:id="searchField" prefWidth="300.0" promptText="Поиск по названию товара..."/>
+        </HBox>
+        <TableView fx:id="reviewTable" VBox.vgrow="ALWAYS">
+            <columns>
+                <TableColumn fx:id="productCol" prefWidth="350.0" text="Товар"/>
+                <TableColumn fx:id="ratingCol" prefWidth="120.0" text="Интегр. рейтинг"/>
+                <TableColumn fx:id="dateCol" prefWidth="150.0" text="Дата"/>
+                <TableColumn fx:id="statusCol" prefWidth="100.0" text="Статус"/>
+            </columns>
+        </TableView>
+        <HBox alignment="CENTER_RIGHT" spacing="10.0">
+            <padding>
+                <Insets top="15.0"/>
+            </padding>
+            <Button onAction="#handleAddReview" styleClass="button-primary" text="Добавить отзыв..."/>
+            <Button onAction="#handleEditReview" styleClass="button-secondary" text="Редактировать..."/>
+            <Button onAction="#handleApproveReview" styleClass="button-secondary" text="Одобрить"/>
+            <Button onAction="#handleRejectReview" styleClass="button-secondary" text="Отклонить"/>
+        </HBox>
+    </VBox>
 </VBox>

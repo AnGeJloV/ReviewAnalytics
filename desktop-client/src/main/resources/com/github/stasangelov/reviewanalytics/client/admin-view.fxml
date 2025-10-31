@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.layout.VBox?>
-<VBox xmlns="http://javafx.com/javafx"
-      xmlns:fx="http://javafx.com/fxml"
-      prefHeight="550.0" prefWidth="900.0">
-    <children>
-        <fx:include source="tabs/review-management-tab.fxml" />
-    </children>
-</VBox>
+
+<ScrollPane fitToWidth="true" style="-fx-background-color: transparent;" xmlns="http://javafx.com/javafx/17.0.12"
+            xmlns:fx="http://javafx.com/fxml/1">
+    <VBox>
+        <fx:include source="tabs/review-management-tab.fxml"/>
+    </VBox>
+</ScrollPane>

@@ -29,6 +29,8 @@ public class LoginController {
     @FXML
     protected void onLoginButtonClick(ActionEvent event) {
 
+        setInfoLabel(null);
+
         String email = emailField.getText();
         String password = passwordField.getText();
 
@@ -44,12 +46,8 @@ public class LoginController {
         authService.login(request, new ApiCallback<>() {
             @Override
             public void onSuccess(AuthResponse result) {
-                // Сохраняем токен в сессии
                 SessionManager.getInstance().createSession(result.getToken(), result.getRoles());
-                Platform.runLater(() -> {
-                    // Переключаемся на главный экран
-                    ViewSwitcher.switchToMainView(event);
-                });
+                Platform.runLater(() -> ViewSwitcher.switchToMainView(event));
             }
 
             @Override
@@ -70,6 +68,14 @@ public class LoginController {
     }
 
     private void setInfoLabel(String message) {
-        infoLabel.setText(message);
+        if (message == null || message.isEmpty()) {
+            infoLabel.setText("");
+            infoLabel.setManaged(false);
+            infoLabel.setVisible(false);
+        } else {
+            infoLabel.setText(message);
+            infoLabel.setManaged(true);
+            infoLabel.setVisible(true);
+        }
     }
 }

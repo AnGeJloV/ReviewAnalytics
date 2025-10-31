@@ -1,73 +1,144 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import java.net.*?>
-<?import javafx.geometry.*?>
-<?import javafx.scene.chart.*?>
-<?import javafx.scene.control.*?>
-<?import javafx.scene.layout.*?>
+<?import java.net.URL?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.chart.PieChart?>
+<?import javafx.scene.control.CheckBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.FlowPane?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.shape.SVGPath?>
 
-<VBox prefHeight="700.0" prefWidth="1000.0" spacing="15.0" styleClass="dashboard-background" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.github.stasangelov.reviewanalytics.client.controller.ProductDetailsController">
+<?import javafx.scene.control.Button?>
+<ScrollPane fitToWidth="true" style="-fx-background-color: transparent;" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.github.stasangelov.reviewanalytics.client.controller.ProductDetailsController">
     <stylesheets>
         <URL value="@dashboard.css" />
     </stylesheets>
-    <padding>
-        <Insets bottom="15.0" left="15.0" right="15.0" top="15.0" />
-    </padding>
-    <children>
-        <!-- ЗАГОЛОВОК -->
-        <HBox alignment="CENTER_LEFT" spacing="20">
-            <Label fx:id="productNameLabel" styleClass="dashboard-title" text="Название товара..." />
-            <Region HBox.hgrow="ALWAYS" />
-            <CheckBox fx:id="compareCheckBox" onAction="#handleToggleCompare" text="Добавить к сравнению" />
-            <Button onAction="#exportDetailsToPdf" text="Экспорт в PDF" style="-fx-margin-left: 10px;"/>
-        </HBox>
-
-        <!-- СЕКЦИЯ KPI -->
-        <HBox spacing="20.0">
-            <VBox styleClass="kpi-card" HBox.hgrow="ALWAYS">
-                <Label styleClass="kpi-title" text="Средний рейтинг" />
-                <Label fx:id="avgRatingLabel" styleClass="kpi-value" text="-" />
-            </VBox>
-            <VBox styleClass="kpi-card" HBox.hgrow="ALWAYS">
-                <Label styleClass="kpi-title" text="Количество отзывов" />
-                <Label fx:id="reviewCountLabel" styleClass="kpi-value" text="-" />
-            </VBox>
-            <VBox styleClass="kpi-card" HBox.hgrow="ALWAYS">
-                <Label styleClass="kpi-title" text="Категория" />
-                <Label fx:id="categoryLabel" styleClass="kpi-value" text="-" />
-            </VBox>
-            <VBox styleClass="kpi-card" HBox.hgrow="ALWAYS">
-                <Label styleClass="kpi-title" text="Бренд" />
-                <Label fx:id="brandLabel" styleClass="kpi-value" text="-" />
-            </VBox>
-        </HBox>
-
-        <!-- СЕКЦИЯ ГРАФИКА И ТАБЛИЦЫ -->
-        <GridPane hgap="20.0" VBox.vgrow="ALWAYS">
-            <columnConstraints>
-                <ColumnConstraints hgrow="SOMETIMES" percentWidth="49.0" />
-                <ColumnConstraints hgrow="SOMETIMES" percentWidth="51.0" />
-            </columnConstraints>
-            <rowConstraints>
-                <RowConstraints minHeight="10.0" vgrow="SOMETIMES" />
-            </rowConstraints>
+    <content>
+        <VBox minWidth="900.0" spacing="20.0" styleClass="content-background">
+            <padding>
+                <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
+            </padding>
             <children>
+                <!-- ЗАГОЛОВОК И КНОПКИ ДЕЙСТВИЙ -->
+                <HBox alignment="CENTER_LEFT" spacing="20.0">
+                    <children>
+                        <Label fx:id="productNameLabel" styleClass="content-title" text="Название товара..." />
+                        <Region HBox.hgrow="ALWAYS" />
+                        <CheckBox fx:id="compareCheckBox" onAction="#handleToggleCompare" text="Добавить к сравнению" />
+                        <Button onAction="#exportDetailsToPdf" styleClass="button-secondary" text="Экспорт в PDF" />
+                    </children>
+                </HBox>
 
-                <VBox fx:id="pieChartContainer" prefHeight="490.0" prefWidth="481.0" styleClass="chart-card">
-                    <Label styleClass="chart-title" text="Профиль сильных/слабых сторон" />
-                    <PieChart fx:id="criteriaProfileChart" VBox.vgrow="ALWAYS" />
-                    <FlowPane fx:id="customLegendPane" alignment="CENTER" hgap="15" vgap="5" style="-fx-padding: 10;" />
-                </VBox>
+                <!-- СЕКЦИЯ KPI (КАК НА ГЛАВНОМ ЭКРАНЕ) -->
+                <GridPane hgap="20.0">
+                    <columnConstraints>
+                        <ColumnConstraints hgrow="SOMETIMES" percentWidth="25.0" />
+                        <ColumnConstraints hgrow="SOMETIMES" percentWidth="25.0" />
+                        <ColumnConstraints hgrow="SOMETIMES" percentWidth="25.0" />
+                        <ColumnConstraints hgrow="SOMETIMES" percentWidth="25.0" />
+                    </columnConstraints>
+                    <rowConstraints>
+                        <RowConstraints />
+                    </rowConstraints>
+                    <children>
+                        <HBox alignment="CENTER_LEFT" spacing="20.0" styleClass="kpi-card-new" GridPane.columnIndex="0">
+                            <children>
+                                <StackPane styleClass="kpi-icon-container">
+                                    <children>
+                                        <SVGPath content="M12,17.27L18.18,21L17,14.64L22,9.73L15.36,8.82L12,2.5L8.64,8.82L2,9.73L7,14.64L5.82,21L12,17.27Z" styleClass="kpi-icon" />
+                                    </children>
+                                </StackPane>
+                                <VBox>
+                                    <children>
+                                        <Label styleClass="kpi-title" text="Средний рейтинг" />
+                                        <Label fx:id="avgRatingLabel" styleClass="kpi-value" text="-" />
+                                    </children>
+                                </VBox>
+                            </children>
+                        </HBox>
+                        <HBox alignment="CENTER_LEFT" spacing="20.0" styleClass="kpi-card-new" GridPane.columnIndex="1">
+                            <children>
+                                <StackPane styleClass="kpi-icon-container">
+                                    <children>
+                                        <SVGPath content="M20,2H4C2.9,2 2,2.9 2,4V22L6,18H20C21.1,18 22,17.1 22,16V4C22,2.9 21.1,2 20,2Z" styleClass="kpi-icon" />
+                                    </children>
+                                </StackPane>
+                                <VBox>
+                                    <children>
+                                        <Label styleClass="kpi-title" text="Количество отзывов" />
+                                        <Label fx:id="reviewCountLabel" styleClass="kpi-value" text="-" />
+                                    </children>
+                                </VBox>
+                            </children>
+                        </HBox>
+                        <HBox alignment="CENTER_LEFT" spacing="20.0" styleClass="kpi-card-new" GridPane.columnIndex="2">
+                            <children>
+                                <StackPane styleClass="kpi-icon-container">
+                                    <children>
+                                        <SVGPath content="M5.5,7.5H18.5V17.5H5.5V7.5M17.5,2.5H6.5L5.5,4.5V6.5H18.5V4.5L17.5,2.5M19.5,6.5H4.5C3.4,6.5 2.5,7.4 2.5,8.5V16.5C2.5,17.6 3.4,18.5 4.5,18.5H19.5C20.6,18.5 21.5,17.6 21.5,16.5V8.5C21.5,7.4 20.6,6.5 19.5,6.5Z" styleClass="kpi-icon" />
+                                    </children>
+                                </StackPane>
+                                <VBox>
+                                    <children>
+                                        <Label styleClass="kpi-title" text="Категория" />
+                                        <Label fx:id="categoryLabel" styleClass="kpi-value" text="-" />
+                                    </children>
+                                </VBox>
+                            </children>
+                        </HBox>
+                        <HBox alignment="CENTER_LEFT" spacing="20.0" styleClass="kpi-card-new" GridPane.columnIndex="3">
+                            <children>
+                                <StackPane styleClass="kpi-icon-container">
+                                    <children>
+                                        <SVGPath content="M10,20V14H14V20H19V12H22L12,3L2,12H5V20H10Z" styleClass="kpi-icon" />
+                                    </children>
+                                </StackPane>
+                                <VBox>
+                                    <children>
+                                        <Label styleClass="kpi-title" text="Бренд" />
+                                        <Label fx:id="brandLabel" styleClass="kpi-value" text="-" />
+                                    </children>
+                                </VBox>
+                            </children>
+                        </HBox>
+                    </children>
+                </GridPane>
 
-                <!-- ТАБЛИЦА ОТЗЫВОВ -->
-                <VBox prefHeight="490.0" prefWidth="506.0" styleClass="chart-card" GridPane.columnIndex="1">
-                    <Label styleClass="chart-title" text="Список отзывов" />
-                    <TableView fx:id="reviewsTable" VBox.vgrow="ALWAYS">
-                        <columns>
-                        </columns>
-                    </TableView>
-                </VBox>
+                <!-- СЕКЦИЯ ГРАФИКА И ТАБЛИЦЫ -->
+                <GridPane hgap="20.0" VBox.vgrow="ALWAYS">
+                    <columnConstraints>
+                        <ColumnConstraints hgrow="SOMETIMES" percentWidth="40.0" />
+                        <ColumnConstraints hgrow="SOMETIMES" percentWidth="60.0" />
+                    </columnConstraints>
+                    <rowConstraints>
+                        <RowConstraints minHeight="10.0" vgrow="SOMETIMES" />
+                    </rowConstraints>
+                    <children>
+                        <VBox fx:id="pieChartContainer" styleClass="chart-card">
+                            <children>
+                                <Label styleClass="chart-title" text="Профиль сильных/слабых сторон" />
+                                <PieChart fx:id="criteriaProfileChart" legendVisible="false" VBox.vgrow="ALWAYS" />
+                                <FlowPane fx:id="customLegendPane" alignment="CENTER" hgap="15.0" vgap="5.0" style="-fx-padding: 10;" />
+                            </children>
+                        </VBox>
+                        <VBox styleClass="chart-card" GridPane.columnIndex="1">
+                            <children>
+                                <Label styleClass="chart-title" text="Список отзывов" />
+                                <TableView fx:id="reviewsTable" VBox.vgrow="ALWAYS" />
+                            </children>
+                        </VBox>
+                    </children>
+                </GridPane>
             </children>
-        </GridPane>
-    </children>
-</VBox>
+        </VBox>
+    </content>
+</ScrollPane>

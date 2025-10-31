@@ -47,7 +47,7 @@ public class ViewSwitcher {
     public static void switchToMainView(ActionEvent event) {
         try {
             FXMLLoader fxmlLoader = new FXMLLoader(ClientApplication.class.getResource("main-view.fxml"));
-            Scene scene = new Scene(fxmlLoader.load(), 1024, 768);
+            Scene scene = new Scene(fxmlLoader.load(), 1300, 800);
             Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
             stage.setTitle("ReviewAnalytics - Панель управления");
             stage.setScene(scene);

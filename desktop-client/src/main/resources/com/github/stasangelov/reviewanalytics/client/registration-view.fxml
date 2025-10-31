@@ -1,26 +1,73 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.geometry.Insets?>
-<?import javafx.scene.control.Button?>
-<?import javafx.scene.control.Hyperlink?>
-<?import javafx.scene.control.Label?>
-<?import javafx.scene.control.PasswordField?>
-<?import javafx.scene.control.TextField?>
-<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.shape.SVGPath?>
 <?import javafx.scene.text.Font?>
+<?import java.net.URL?>
 
-<VBox alignment="CENTER" prefHeight="400.0" prefWidth="350.0" spacing="15.0" style="-fx-padding: 25;" xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.github.stasangelov.reviewanalytics.client.controller.RegistrationController">
+<HBox prefHeight="600.0" prefWidth="1000.0" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.github.stasangelov.reviewanalytics.client.controller.RegistrationController">
+
+    <stylesheets>
+        <URL value="@dashboard.css" />
+    </stylesheets>
+
     <children>
-        <Label text="Создание аккаунта">
-            <font>
-                <Font name="System Bold" size="24.0" />
-            </font>
-        </Label>
-        <TextField fx:id="nameField" promptText="Имя" />
-        <TextField fx:id="emailField" promptText="Email" />
-        <PasswordField fx:id="passwordField" promptText="Пароль" />
-        <Label fx:id="infoLabel" text="" textFill="RED" wrapText="true" />
-        <Button mnemonicParsing="false" onAction="#onRegisterButtonClick" prefHeight="35.0" prefWidth="250.0" text="Зарегистрироваться" />
-        <Hyperlink onAction="#onLoginLinkClick" text="Уже есть аккаунт? Войти" />
+        <!-- ЛЕВАЯ ПАНЕЛЬ (БРЕНДИНГ) -->
+        <VBox alignment="CENTER_LEFT" prefHeight="500.0" prefWidth="400.0" spacing="15.0" styleClass="login-sidebar" HBox.hgrow="NEVER">
+            <padding>
+                <Insets left="40.0" right="40.0" />
+            </padding>
+            <children>
+                <SVGPath content="M4,18H20V10H4V18ZM4,6V8H20V6H4Z" styleClass="sidebar-icon" />
+                <Label styleClass="sidebar-title" text="Добро пожаловать!" wrapText="true" />
+                <Label styleClass="sidebar-tagline" text="Зарегистрируйтесь, чтобы начать анализировать данные и принимать взвешенные решения." wrapText="true" />
+            </children>
+        </VBox>
+
+        <!-- ПРАВАЯ ПАНЕЛЬ (ФОРМА) -->
+        <VBox alignment="CENTER" spacing="20.0" styleClass="login-form-container" HBox.hgrow="ALWAYS">
+            <padding>
+                <Insets bottom="40.0" left="60.0" right="60.0" top="40.0" />
+            </padding>
+            <children>
+                <VBox alignment="CENTER" maxWidth="350.0" spacing="25.0" VBox.vgrow="ALWAYS">
+                    <children>
+                        <Label text="Создание аккаунта">
+                            <font>
+                                <Font name="System Bold" size="28.0" />
+                            </font>
+                        </Label>
+                        <VBox spacing="15.0">
+                            <!-- Поле для Имени -->
+                            <HBox alignment="CENTER_LEFT" spacing="10" styleClass="login-input-group">
+                                <children>
+                                    <SVGPath content="M12,4A4,4 0 0,1 16,8A4,4 0 0,1 12,12A4,4 0 0,1 8,8A4,4 0 0,1 12,4M12,14C16.42,14 20,15.79 20,18V20H4V18C4,15.79 7.58,14 12,14Z" styleClass="icon" />
+                                    <TextField fx:id="nameField" promptText="Имя" styleClass="login-input" HBox.hgrow="ALWAYS" />
+                                </children>
+                            </HBox>
+                            <!-- Поле для Email -->
+                            <HBox alignment="CENTER_LEFT" spacing="10" styleClass="login-input-group">
+                                <children>
+                                    <SVGPath content="M22,6C22,4.9 21.1,4 20,4H4C2.9,4 2,4.9 2,6V18C2,19.1 2.9,20 4,20H20C21.1,20 22,19.1 22,18V6M20,6L12,11L4,6H20M20,18H4V8L12,13L20,8V18Z" styleClass="icon" />
+                                    <TextField fx:id="emailField" promptText="Email" styleClass="login-input" HBox.hgrow="ALWAYS" />
+                                </children>
+                            </HBox>
+                            <!-- Поле для Пароля -->
+                            <HBox alignment="CENTER_LEFT" spacing="10" styleClass="login-input-group">
+                                <children>
+                                    <SVGPath content="M12,17A2,2 0 0,0 14,15C14,13.89 13.1,13 12,13A2,2 0 0,0 10,15A2,2 0 0,0 12,17M18,8A2,2 0 0,1 20,10V20A2,2 0 0,1 18,22H6A2,2 0 0,1 4,20V10C4,8.89 4.9,8 6,8H7V6A5,5 0 0,1 12,1A5,5 0 0,1 17,6V8H18M12,3A3,3 0 0,0 9,6V8H15V6A3,3 0 0,0 12,3Z" styleClass="icon" />
+                                    <PasswordField fx:id="passwordField" promptText="Пароль" styleClass="login-input" HBox.hgrow="ALWAYS" />
+                                </children>
+                            </HBox>
+                        </VBox>
+                        <Label fx:id="infoLabel" managed="false" style="-fx-alignment: center;" text="" textFill="RED" wrapText="true" />
+                        <Button onAction="#onRegisterButtonClick" prefHeight="45.0" prefWidth="Infinity" text="Зарегистрироваться" styleClass="login-button" />
+                        <Hyperlink onAction="#onLoginLinkClick" text="Уже есть аккаунт? Войти" />
+                    </children>
+                </VBox>
+            </children>
+        </VBox>
     </children>
-</VBox>
+</HBox>

@@ -3,6 +3,7 @@ package com.github.stasangelov.reviewanalytics.client.controller;
 import com.github.stasangelov.reviewanalytics.client.model.UserManagementDto;
 import com.github.stasangelov.reviewanalytics.client.service.ApiException;
 import com.github.stasangelov.reviewanalytics.client.service.UserService;
+import com.github.stasangelov.reviewanalytics.client.util.AlertFactory;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
@@ -100,7 +101,7 @@ public class UserManagementController {
                 final List<UserManagementDto> users = userService.getAllUsers();
                 Platform.runLater(() -> userList.setAll(users));
             } catch (IOException e) {
-                Platform.runLater(() -> showErrorAlert("Ошибка сети", e.getMessage()));
+                Platform.runLater(() -> AlertFactory.showError("Ошибка сети", e.getMessage()));
             }
         }).start();
     }
@@ -111,10 +112,10 @@ public class UserManagementController {
                 userService.changeRole(user.getId(), newRole);
                 Platform.runLater(this::loadUsers); // Перезагружаем список для обновления
             } catch (ApiException e) {
-                Platform.runLater(() -> showErrorAlert("Операция запрещена", e.getMessage()));
+                Platform.runLater(() -> AlertFactory.showError("Операция запрещена", e.getMessage()));
                 Platform.runLater(this::loadUsers); // Откатываем ComboBox к старому значению
             } catch (IOException e) {
-                Platform.runLater(() -> showErrorAlert("Ошибка сети", e.getMessage()));
+                Platform.runLater(() -> AlertFactory.showError("Ошибка сети", e.getMessage()));
             }
         }).start();
     }
@@ -125,18 +126,10 @@ public class UserManagementController {
                 userService.changeStatus(user.getId(), newStatus);
                 Platform.runLater(this::loadUsers);
             } catch (ApiException e) {
-                Platform.runLater(() -> showErrorAlert("Операция запрещена", e.getMessage()));
+                Platform.runLater(() -> AlertFactory.showError("Операция запрещена", e.getMessage()));
             } catch (IOException e) {
-                Platform.runLater(() -> showErrorAlert("Ошибка сети", e.getMessage()));
+                Platform.runLater(() -> AlertFactory.showError("Ошибка сети", e.getMessage()));
             }
         }).start();
-    }
-
-    private void showErrorAlert(String title, String content) {
-        Alert alert = new Alert(Alert.AlertType.ERROR);
-        alert.setTitle("Ошибка");
-        alert.setHeaderText(title);
-        alert.setContentText(content);
-        alert.showAndWait();
     }
 }

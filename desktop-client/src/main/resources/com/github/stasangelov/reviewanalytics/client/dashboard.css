@@ -1,136 +1,377 @@
-/* Общий фон для всего дашборда */
-.dashboard-background {
-    -fx-background-color: #f4f4f4;
-}
+/* ==========================================================================
+   Глобальные стили и стили для дашборда
+   ========================================================================== */
 
-/* Стиль для заголовка "Информационная панель" */
-.dashboard-title {
-    -fx-font-size: 24px;
-    -fx-font-weight: bold;
-}
-
-/* --- Стили для KPI-карточек --- */
-.kpi-card {
-    -fx-background-color: white;
-    -fx-padding: 20;
-    -fx-background-radius: 8; /* Скругление углов */
-    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 10, 0.5, 0, 1); /* Легкая тень */
-}
-
-.kpi-title {
-    -fx-font-size: 14px;
-    -fx-text-fill: #666; /* Серый цвет для подписи */
-}
-
-.kpi-value {
-    -fx-font-size: 36px;
-    -fx-font-weight: bold;
-    -fx-text-fill: #333; /* Темно-серый для цифр */
-}
-
-/* --- Стили для карточек с графиками --- */
+/* Карточки с графиками (общий стиль) */
 .chart-card {
     -fx-background-color: white;
     -fx-padding: 15;
     -fx-background-radius: 8;
-    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 10, 0.5, 0, 1);
+    -fx-border-color: #e9ecef;
+    -fx-border-width: 1;
+    -fx-border-radius: 8;
 }
 
 .chart-title {
     -fx-font-weight: bold;
-    -fx-padding: 0 0 10 5; /* Отступ снизу и слева */
+    -fx-padding: 0 0 10 5;
 }
 
-/* Убираем лишние рамки и фон у самого графика, чтобы он вписался в карточку */
-.chart {
-    -fx-padding: 0;
-}
+.chart { -fx-padding: 0; }
+.chart .axis-label { -fx-font-size: 12px; }
+.chart .axis .tick-label { -fx-font-size: 10px; }
 
-/* Стиль для оси Y (названия товаров), чтобы они были четче */
-.chart .axis-label {
-    -fx-font-size: 12px;
-}
 
-.chart .axis .tick-label {
-    -fx-font-size: 10px;
-}
+/* ==========================================================================
+   ВОССТАНОВЛЕННЫЕ СТИЛИ ДЛЯ ДИАГРАММ (ВАШИ НАСТРОЙКИ)
+   ========================================================================== */
 
-/* --- Стили для столбцов в BarChart --- */
-
-/* --- Градиент для ЛУЧШИХ товаров (темные оттенки) --- */
-/* data4 - самый лучший (вверху), data0 - пятый в топе (внизу) */
-#topProductsChart .data4.chart-bar { -fx-bar-fill: #333333; } /* Ваш базовый цвет, самый темный */
+/* Градиент для ЛУЧШИХ товаров (темные оттенки) */
+#topProductsChart .data4.chart-bar { -fx-bar-fill: #333333; }
 #topProductsChart .data3.chart-bar { -fx-bar-fill: #4D4D4D; }
 #topProductsChart .data2.chart-bar { -fx-bar-fill: #666666; }
 #topProductsChart .data1.chart-bar { -fx-bar-fill: #808080; }
-#topProductsChart .data0.chart-bar { -fx-bar-fill: #999999; } /* Самый "светлый" из темных */ /* Самый "светлый" из темных */
+#topProductsChart .data0.chart-bar { -fx-bar-fill: #999999; }
 
-/* --- Градиент для ХУДШИХ товаров (светлые оттенки) --- */
-/* data4 - самый худший (вверху), data0 - пятый с конца (внизу) */
-#worstProductsChart .data4.chart-bar { -fx-bar-fill: #ECF0F1; } /* Очень светлый серый */
+/* Градиент для ХУДШИХ товаров (светлые оттенки) */
+#worstProductsChart .data4.chart-bar { -fx-bar-fill: #ECF0F1; }
 #worstProductsChart .data3.chart-bar { -fx-bar-fill: #D2D7D3; }
 #worstProductsChart .data2.chart-bar { -fx-bar-fill: #BDBDBD; }
 #worstProductsChart .data1.chart-bar { -fx-bar-fill: #A9A9A9; }
-#worstProductsChart .data0.chart-bar { -fx-bar-fill: #8D8D8D; } /* Самый "темный" из светлых */
+#worstProductsChart .data0.chart-bar { -fx-bar-fill: #8D8D8D; }
 
-/* --- НОВЫЕ СТИЛИ для графика категорий --- */
+/* График категорий */
 #categoryChart .chart-bar {
-    -fx-bar-fill: #333333; /* Ваш темно-серый цвет */
+    -fx-bar-fill: #333333;
 }
 
-/* --- НОВЫЕ СТИЛИ для графика динамики --- */
-/* Цвет линии */
+/* График динамики */
 #dynamicsChart .chart-series-line {
     -fx-stroke: #333333;
     -fx-stroke-width: 2px;
 }
-/* Цвет точек на линии */
 #dynamicsChart .chart-line-symbol {
     -fx-background-color: #333333, white;
     -fx-background-insets: 0, 2;
     -fx-padding: 3px;
 }
 
-/* --- Стили для StackedBarChart --- */
-.default-color0.chart-bar { -fx-bar-fill: #999999; }
-.default-color1.chart-bar { -fx-bar-fill: #808080; }
-.default-color2.chart-bar { -fx-bar-fill: #666666; }
-.default-color3.chart-bar { -fx-bar-fill: #4D4D4D; }
-.default-color4.chart-bar { -fx-bar-fill: #333333; }
+/* График распределения (StackedBarChart) */
+.default-color0.chart-bar { -fx-bar-fill: #adb5bd; }
+.default-color1.chart-bar { -fx-bar-fill: #868e96; }
+.default-color2.chart-bar { -fx-bar-fill: #6c757d; }
+.default-color3.chart-bar { -fx-bar-fill: #495057; }
+.default-color4.chart-bar { -fx-bar-fill: #343a40; }
 
-/* --- Стили для таблицы --- */
-.table-view .column-header .label {
+
+/* ==========================================================================
+   Стили для окон входа и регистрации
+   ========================================================================== */
+
+.login-sidebar {
+    -fx-background-color: #343a40;
+    -fx-padding: 40px;
+    -fx-border-color: #495057 transparent transparent transparent;
+    -fx-border-width: 2;
+}
+.sidebar-icon {
+    -fx-fill: #ecf0f1;
+    -fx-scale-x: 2.5;
+    -fx-scale-y: 2.5;
+    -fx-translate-x: 5;
+}
+.sidebar-title {
+    -fx-font-family: "System";
+    -fx-font-size: 36px;
     -fx-font-weight: bold;
-    -fx-alignment: CENTER_LEFT;
+    -fx-text-fill: white;
+    -fx-padding-top: 10px;
 }
-
-.table-view .column-header:hover {
-    -fx-background-color: #f0f0f0; /* Легкая подсветка при наведении */
+.sidebar-tagline {
+    -fx-font-size: 16px;
+    -fx-text-fill: #bdc3c7;
 }
-
-/* --- Стили для PieChart --- */
-/* Задаем градиент серого для секторов */
-.pie-chart .default-color0.chart-pie { -fx-pie-color: #333333; } /* Самый темный */
-.pie-chart .default-color1.chart-pie { -fx-pie-color: #4D4D4D; }
-.pie-chart .default-color2.chart-pie { -fx-pie-color: #666666; }
-.pie-chart .default-color3.chart-pie { -fx-pie-color: #808080; }
-.pie-chart .default-color4.chart-pie { -fx-pie-color: #999999; }
-.pie-chart .default-color5.chart-pie { -fx-pie-color: #B3B3B3; }
-.pie-chart .default-color6.chart-pie { -fx-pie-color: #CCCCCC; }
-.pie-chart .default-color7.chart-pie { -fx-pie-color: #E0E0E0; } /* Самый светлый */
-
-/* Стиль для линий, отделяющих сектора */
-.pie-chart .chart-pie {
-    -fx-border-color: white;
-    -fx-border-width: 1px;
+.login-form-container {
+    -fx-background-color: #ffffff;
 }
-
-/* Стиль для легенды */
-.pie-chart .chart-legend {
+.login-input-group {
+    -fx-background-color: #e9ecef;
+    -fx-background-radius: 8;
+    -fx-padding: 5px 15px;
+}
+.icon {
+    -fx-fill: #95a5a6;
+}
+.login-input {
     -fx-background-color: transparent;
+    -fx-font-size: 16px;
+    -fx-pref-height: 40px;
+    -fx-prompt-text-fill: #ced4da;
+}
+.login-button {
+    -fx-background-color: #6c757d;
+    -fx-text-fill: white;
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-background-radius: 8;
+    -fx-cursor: hand;
+    -fx-effect: dropshadow(gaussian, rgba(108, 117, 125, 0.5), 10, 0, 0, 3);
+}
+.login-button:hover { -fx-background-color: #5a6268; }
+.login-button:pressed { -fx-background-color: #495057; -fx-effect: none; }
+
+
+/* ==========================================================================
+   Стили для нового главного окна (Навигация + Контент)
+   ========================================================================== */
+
+.content-background {
+    -fx-background-color: #f8f9fa;
 }
 
-/* --- Стили для AreaChart --- */
+/* Левая навигационная панель */
+.nav-sidebar {
+    -fx-background-color: #343a40;
+    -fx-pref-width: 280px;
+    -fx-min-width: 280px;
+    -fx-max-width: 280px;
+    -fx-border-color: transparent #dee2e6 transparent transparent;
+    -fx-border-width: 1;
+}
+
+.nav-title {
+    -fx-font-size: 20px;
+    -fx-font-weight: bold;
+    -fx-text-fill: white;
+    -fx-padding: 0 0 20px 0;
+}
+
+.nav-button {
+    -fx-background-color: transparent;
+    -fx-pref-width: 280px;
+    -fx-pref-height: 50px;
+    -fx-text-fill: #adb5bd;
+    -fx-font-size: 14px;
+    -fx-background-radius: 0;
+    -fx-padding: 0 0 0 40px;
+    -fx-cursor: hand;
+}
+.nav-button .svg-path { -fx-fill: #adb5bd; }
+
+.nav-button:hover {
+    -fx-background-color: #495057;
+    -fx-text-fill: white;
+}
+.nav-button:hover .svg-path { -fx-fill: white; }
+
+.nav-button-active {
+    -fx-background-color: #212529;
+    -fx-text-fill: white;
+    -fx-border-color: transparent transparent transparent #007bff;
+    -fx-border-width: 0 0 0 3;
+}
+.nav-button-active .svg-path { -fx-fill: white; }
+
+.nav-button-logout {
+    -fx-background-color: transparent;
+    -fx-pref-width: 280px;
+    -fx-pref-height: 50px;
+    -fx-text-fill: #adb5bd;
+    -fx-font-size: 14px;
+    -fx-background-radius: 0;
+    -fx-border-color: #495057 transparent transparent transparent;
+    -fx-border-width: 1;
+    -fx-cursor: hand;
+    -fx-padding: 0 0 0 40px;
+    -fx-alignment: baseline-left;
+}
+.nav-button-logout .svg-path { -fx-fill: #adb5bd; }
+
+.nav-button-logout:hover {
+    -fx-background-color: #c92a2a;
+    -fx-text-fill: white;
+}
+.nav-button-logout:hover .svg-path { -fx-fill: white; }
+
+/* Верхняя панель в области контента */
+.content-header {
+    -fx-pref-height: 60px;
+    -fx-background-color: white;
+    -fx-padding: 0 20px;
+    -fx-border-color: transparent transparent #dee2e6 transparent;
+    -fx-border-width: 1;
+}
+
+.content-title {
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #343a40;
+}
+
+
+/* ==========================================================================
+   Стили для элементов дашборда 2.0
+   ========================================================================== */
+
+/* Панель фильтров */
+.filter-bar {
+    -fx-background-color: transparent;
+    -fx-border-width: 0;
+    -fx-padding: 0;
+}
+.filter-bar .label {
+    -fx-font-size: 12px;
+    -fx-text-fill: #6c757d;
+    -fx-padding: 0 0 5px 0;
+}
+.filter-bar .date-picker,
+.filter-bar .combo-box {
+    -fx-pref-height: 38px;
+    -fx-background-color: white;
+    -fx-border-color: #ced4da;
+    -fx-border-width: 1;
+    -fx-border-radius: 6;
+}
+.filter-bar .date-picker:hover,
+.filter-bar .combo-box:hover { -fx-border-color: #adb5bd; }
+.filter-bar .combo-box .arrow { -fx-background-color: #495057; }
+
+/* Новый дизайн KPI-карточек */
+.kpi-card-new {
+    -fx-background-color: white;
+    -fx-padding: 20px;
+    -fx-background-radius: 8;
+    -fx-border-color: #e9ecef;
+    -fx-border-width: 1;
+    -fx-border-radius: 8;
+}
+
+/* Уменьшаем шрифт в KPI-карточках на странице детализации, чтобы текст помещался */
+.kpi-card-new .kpi-title {
+    -fx-font-size: 11px; /* Чуть меньше стандартного */
+}
+
+.kpi-card-new .kpi-value {
+    -fx-font-size: 25px; /* Чуть меньше стандартного */
+    /* Позволяем тексту переноситься, если он все равно не помещается */
+    -fx-wrap-text: true;
+}
+
+.kpi-icon-container {
+    -fx-background-color: #f1f3f5; /* Светло-серый фон для всех иконок */
+    -fx-pref-width: 60px;
+    -fx-pref-height: 60px;
+    -fx-shape: "M 0,10 A 10,10 0 0 1 10,0 H 50 A 10,10 0 0 1 60,10 V 50 A 10,10 0 0 1 50,60 H 10 A 10,10 0 0 1 0,50 Z";
+}
+.kpi-icon {
+    -fx-scale-x: 1.2;
+    -fx-scale-y: 1.2;
+    -fx-fill: #868e96; /* Средне-серый цвет для всех иконок */
+}
+.kpi-icon-container-blue .kpi-icon { -fx-fill: #1c7ed6; }
+.kpi-icon-container-green .kpi-icon { -fx-fill: #2f9e44; }
+
+.kpi-title {
+    -fx-font-size: 14px;
+    -fx-text-fill: #868e96;
+    -fx-font-weight: normal;
+}
+
+.kpi-value {
+    -fx-font-size: 32px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #212529;
+}
+
+/* Улучшенные стили таблицы */
+.table-view {
+    -fx-background-color: transparent;
+    -fx-border-color: #dee2e6;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+}
+.table-view .column-header-background {
+    -fx-background-color: #f8f9fa;
+    -fx-background-radius: 8 8 0 0;
+}
+.table-view .column-header, .table-view .filler {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent #dee2e6 transparent transparent;
+    -fx-border-width: 0 1 0 0;
+}
+.table-view .column-header .label {
+    -fx-font-size: 12px;
+    -fx-text-fill: #495057;
+    -fx-font-weight: bold;
+    -fx-padding: 10px;
+}
+.table-view .table-cell {
+    -fx-padding: 10px;
+    -fx-border-color: transparent transparent #e9ecef transparent;
+}
+.table-view .table-row-cell:hover { -fx-background-color: #f1f3f5; }
+/* Стиль для выделенной строки таблицы */
+.table-row-cell:selected {
+    -fx-background-color: #dee2e6; /* НОВЫЙ ЦВЕТ: Светло-серый, как фон полей */
+    -fx-text-fill: #212529; /* Темный текст для контраста */
+}
+
+/* Убираем синий цвет у текста в выделенных ячейках */
+.table-row-cell:selected .text {
+    -fx-fill: #212529;
+}
+.table-cell .combo-box {
+    -fx-background-color: #f1f3f5;
+    -fx-border-color: #dee2e6;
+    -fx-border-width: 1;
+    -fx-border-radius: 4;
+}
+.table-cell .combo-box:hover {
+    -fx-border-color: #adb5bd;
+}
+
+/* Стилизация Button внутри ячейки таблицы */
+.table-cell .button {
+    -fx-background-color: transparent;
+    -fx-text-fill: #495057;
+    -fx-border-color: #ced4da;
+    -fx-border-width: 1.5;
+    -fx-border-radius: 6;
+    -fx-cursor: hand;
+    -fx-font-size: 12px;
+}
+.table-cell .button:hover {
+    -fx-background-color: #f8f9fa;
+    -fx-border-color: #495057;
+}
+
+/* Стили для кнопок "Применить", "Сбросить", "Экспорт" */
+.button-primary {
+    -fx-background-color: #343a40;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-background-radius: 6;
+    -fx-cursor: hand;
+}
+.button-primary:hover { -fx-background-color: #495057; }
+.button-primary:pressed { -fx-background-color: #212529; }
+
+.button-secondary {
+    -fx-background-color: transparent;
+    -fx-text-fill: #495057;
+    -fx-font-weight: bold;
+    -fx-border-color: #ced4da;
+    -fx-border-width: 1.5;
+    -fx-border-radius: 6;
+    -fx-cursor: hand;
+}
+.button-secondary:hover {
+    -fx-background-color: #f8f9fa;
+    -fx-border-color: #495057;
+}
+.button-secondary:pressed { -fx-background-color: #e9ecef; }
+
+/* --- Стили для AreaChart (ВАШИ НАСТРОЙКИ) --- */
 /* Задаем полупрозрачные заливки для областей */
 .chart-series-area-fill.series0 { -fx-fill: rgba(51, 51, 51, 0.4); } /* #333333 */
 .chart-series-area-fill.series1 { -fx-fill: rgba(102, 102, 102, 0.4); } /* #666666 */
@@ -160,10 +401,125 @@
 .series2 .chart-area-symbol { -fx-background-color: #999999, white; }
 .series3 .chart-area-symbol { -fx-background-color: #CCCCCC, white; }
 
-.table-view .column-header {
-    -fx-alignment: CENTER;
+/* Стиль для ячейки в выпадающем списке */
+.combo-box-popup .list-view .list-cell {
+    -fx-background-color: white;
+    -fx-text-fill: #343a40;
 }
-.chart-legend {
-    -fx-alignment: center;
-    -fx-padding: 10 0 0 0;
+
+/* Стиль для ячейки при наведении на нее курсора */
+.combo-box-popup .list-view .list-cell:hover {
+    -fx-background-color: #f8f9fa; /* Очень светло-серый */
+}
+
+/* Стиль для ВЫБРАННОЙ ячейки */
+.combo-box-popup .list-view .list-cell:filled:selected,
+.combo-box-popup .list-view .list-cell:filled:selected:focused {
+    -fx-background-color: #6c757d; /* Средне-серый, как у основной кнопки */
+    -fx-text-fill: white;
+}
+
+/* ==========================================================================
+   Стили для диалогового окна редактирования отзыва
+   ========================================================================== */
+
+.dialog-background {
+    -fx-background-color: #f8f9fa; /* Тот же фон, что и у дашборда */
+}
+
+.dialog-title {
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #343a40;
+}
+
+/* Применяем стили фильтров к ComboBox и DatePicker в диалоге */
+.dialog-background .combo-box,
+.dialog-background .date-picker {
+    -fx-background-color: white;
+    -fx-border-color: #ced4da;
+    -fx-border-width: 1;
+    -fx-border-radius: 6;
+}
+.dialog-background .combo-box:hover,
+.dialog-background .date-picker:hover {
+    -fx-border-color: #adb5bd;
+}
+
+/* Стилизация ScrollPane для оценок */
+.criteria-scroll-pane {
+    -fx-background-color: transparent;
+    -fx-border-color: #dee2e6;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+}
+
+/* Стилизация Spinner (для оценок) */
+.spinner .increment-arrow-button,
+.spinner .decrement-arrow-button {
+    -fx-background-color: #f1f3f5;
+    -fx-border-color: #dee2e6;
+}
+.spinner .increment-arrow-button:hover,
+.spinner .decrement-arrow-button:hover {
+    -fx-background-color: #e9ecef;
+}
+
+/* ==========================================================================
+   Стили для кастомных диалоговых окон (Alerts)
+   ========================================================================== */
+
+.custom-alert {
+    -fx-background-color: #f8f9fa;
+}
+
+.custom-alert .header-panel {
+    -fx-background-color: white;
+    -fx-border-color: transparent transparent #dee2e6 transparent;
+    -fx-border-width: 1;
+    -fx-padding: 15px;
+}
+
+.custom-alert .header-panel .label {
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #343a40;
+}
+
+.custom-alert .header-panel .svg-path {
+    -fx-scale-x: 1.2;
+    -fx-scale-y: 1.2;
+    -fx-fill: #868e96;
+}
+
+.custom-alert .content.label {
+    -fx-font-size: 14px;
+    -fx-padding: 20px 15px;
+}
+
+.custom-alert .button-bar .button {
+    -fx-background-color: #6c757d;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-background-radius: 6;
+    -fx-cursor: hand;
+}
+.custom-alert .button-bar .button:hover {
+    -fx-background-color: #5a6268;
+}
+
+/* ==========================================================================
+   Стили для заглушки (Placeholder)
+   ========================================================================== */
+
+.placeholder-icon {
+    -fx-fill: #dee2e6; /* Очень светлый серый */
+    -fx-scale-x: 5.0;
+    -fx-scale-y: 5.0;
+}
+
+.placeholder-text {
+    -fx-font-size: 18px;
+    -fx-text-fill: #868e96; /* Средне-серый */
+    -fx-max-width: 400px;
 }

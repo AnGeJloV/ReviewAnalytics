@@ -16,10 +16,10 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
-import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
+import com.github.stasangelov.reviewanalytics.client.util.AlertFactory;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -99,7 +99,9 @@ public class ReviewManagementTabController {
                 final List<ReviewDto> reviews = reviewService.getAllReviews();
                 Platform.runLater(() -> allReviews.setAll(reviews));
             } catch (IOException e) {
-                Platform.runLater(() -> showErrorAlert("Ошибка сети", "Не удалось загрузить отзывы.", e.getMessage()));
+                Platform.runLater(() ->
+                        AlertFactory.showError("Не удалось загрузить отзывы", "Ошибка сети: " + e.getMessage())
+                );
                 e.printStackTrace();
             }
         }).start();
@@ -117,7 +119,7 @@ public class ReviewManagementTabController {
     private void handleEditReview() {
         ReviewDto selected = reviewTable.getSelectionModel().getSelectedItem();
         if (selected == null) {
-            showInfoAlert("Ничего не выбрано", "Пожалуйста, выберите отзыв для редактирования.");
+            AlertFactory.showInfo("Ничего не выбрано", "Пожалуйста, выберите отзыв для редактирования.");
             return;
         }
         boolean saved = showReviewEditDialog(selected);
@@ -139,7 +141,7 @@ public class ReviewManagementTabController {
     private void changeSelectedReviewStatus(String status) {
         ReviewDto selected = reviewTable.getSelectionModel().getSelectedItem();
         if (selected == null) {
-            showInfoAlert("Ничего не выбрано", "Пожалуйста, выберите отзыв для изменения статуса.");
+            AlertFactory.showInfo("Ничего не выбрано", "Пожалуйста, выберите отзыв для изменения статуса.");
             return;
         }
 
@@ -148,9 +150,13 @@ public class ReviewManagementTabController {
                 reviewService.changeStatus(selected.getId(), status);
                 Platform.runLater(this::loadReviews);
             } catch (ApiException e) {
-                Platform.runLater(() -> showErrorAlert("Ошибка API (" + e.getStatusCode() + ")", "Не удалось изменить статус.", e.getMessage()));
+                Platform.runLater(() ->
+                        AlertFactory.showError("Не удалось изменить статус", "Ошибка API (" + e.getStatusCode() + "): " + e.getMessage())
+                );
             } catch (IOException e) {
-                Platform.runLater(() -> showErrorAlert("Ошибка сети", "Не удалось изменить статус.", e.getMessage()));
+                Platform.runLater(() ->
+                        AlertFactory.showError("Не удалось изменить статус", "Ошибка сети: " + e.getMessage())
+                );
             }
         }).start();
     }
@@ -186,11 +192,4 @@ public class ReviewManagementTabController {
         alert.showAndWait();
     }
 
-    private void showInfoAlert(String title, String content) {
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("Информация");
-        alert.setHeaderText(title);
-        alert.setContentText(content);
-        alert.showAndWait();
-    }
 }

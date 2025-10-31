@@ -3,7 +3,7 @@ package com.github.stasangelov.reviewanalytics.client.service;
 import com.github.stasangelov.reviewanalytics.client.model.ProductSummaryDto;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.scene.control.Alert;
+import com.github.stasangelov.reviewanalytics.client.util.AlertFactory;
 
 /**
  * Сервис-синглтон для управления "корзиной сравнения".
@@ -39,13 +39,13 @@ public class ComparisonService {
      */
     public boolean addProduct(ProductSummaryDto product) {
         if (itemsToCompare.size() >= MAX_ITEMS) {
-            showAlert("Лимит достигнут", "Можно сравнивать не более " + MAX_ITEMS + " товаров одновременно.");
+            AlertFactory.showWarning("Лимит достигнут", "Можно сравнивать не более " + MAX_ITEMS + " товаров одновременно.");
             return false; // Лимит достигнут
         }
         if (!itemsToCompare.isEmpty()) {
             String firstCategory = itemsToCompare.get(0).getCategoryName();
             if (!product.getCategoryName().equals(firstCategory)) {
-                showAlert("Неверная категория", "Можно сравнивать только товары из одной категории (" + firstCategory + ").");
+                AlertFactory.showWarning("Неверная категория", "Можно сравнивать только товары из одной категории (" + firstCategory + ").");
                 return false;
             }
         }
@@ -86,16 +86,5 @@ public class ComparisonService {
      */
     public void clear() {
         itemsToCompare.clear();
-    }
-
-    /**
-     * НОВЫЙ МЕТОД: Вспомогательный метод для показа Alert.
-     */
-    private void showAlert(String title, String content) {
-        Alert alert = new Alert(Alert.AlertType.WARNING);
-        alert.setTitle("Внимание");
-        alert.setHeaderText(title);
-        alert.setContentText(content);
-        alert.showAndWait();
     }
 }

@@ -1,43 +1,50 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.geometry.Insets?>
-<?import javafx.scene.control.*?>
-<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ButtonBar?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.DatePicker?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.VBox?>
 
-<VBox xmlns="http://javafx.com/javafx"
-      xmlns:fx="http://javafx.com/fxml"
-      fx:controller="com.github.stasangelov.reviewanalytics.client.controller.dialog.ReviewEditDialogController"
-      prefWidth="500" prefHeight="500" spacing="15">
+<?import java.net.URL?>
+<VBox prefWidth="500.0" prefHeight="500.0" spacing="15.0" styleClass="dialog-background" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.github.stasangelov.reviewanalytics.client.controller.dialog.ReviewEditDialogController">
+
+    <stylesheets>
+        <URL value="@dashboard.css" />
+    </stylesheets>
+
     <padding>
-        <Insets top="15" right="15" bottom="15" left="15"/>
+        <Insets bottom="15.0" left="15.0" right="15.0" top="15.0" />
     </padding>
     <children>
-        <Label fx:id="titleLabel" text="Добавление отзыва" style="-fx-font-size: 18px; -fx-font-weight: bold;"/>
-        <GridPane hgap="10" vgap="10">
-            <Label text="Товар:" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
-            <ComboBox fx:id="productComboBox" prefWidth="350" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
-            <Label text="Дата:" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
-            <DatePicker fx:id="datePicker" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
+        <Label fx:id="titleLabel" styleClass="dialog-title" text="Добавление отзыва" />
+        <GridPane hgap="10.0" vgap="10.0">
+            <Label text="Товар:" GridPane.columnIndex="0" GridPane.rowIndex="0" />
+            <ComboBox fx:id="productComboBox" prefWidth="350.0" promptText="Выберите товар..." GridPane.columnIndex="1" GridPane.rowIndex="0" />
+            <Label text="Дата:" GridPane.columnIndex="0" GridPane.rowIndex="1" />
+            <DatePicker fx:id="datePicker" prefWidth="350.0" GridPane.columnIndex="1" GridPane.rowIndex="1" />
         </GridPane>
-
-        <Separator/>
-        <Label text="Оценки по критериям:"/>
-
-        <!-- Сюда будут динамически добавляться поля для оценок -->
-        <ScrollPane fx:id="criteriaScrollPane" fitToWidth="true" VBox.vgrow="ALWAYS">
+        <Separator />
+        <Label text="Оценки по критериям:" />
+        <ScrollPane fx:id="criteriaScrollPane" fitToWidth="true" styleClass="criteria-scroll-pane" VBox.vgrow="ALWAYS">
             <content>
-                <GridPane fx:id="criteriaGrid" hgap="10" vgap="10">
-                    <padding><Insets top="5" right="5" bottom="5" left="5"/></padding>
+                <GridPane fx:id="criteriaGrid" hgap="10.0" vgap="10.0">
+                    <padding>
+                        <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+                    </padding>
                 </GridPane>
             </content>
         </ScrollPane>
-
-        <Label fx:id="errorLabel" text="" textFill="red" wrapText="true"/>
-
+        <Label fx:id="errorLabel" style="-fx-text-fill: #c92a2a;" wrapText="true" />
         <ButtonBar>
             <buttons>
-                <Button text="Сохранить" onAction="#handleSave" defaultButton="true"/>
-                <Button text="Отмена" onAction="#handleCancel" cancelButton="true"/>
+                <Button onAction="#handleSave" styleClass="button-primary" text="Сохранить" />
+                <Button onAction="#handleCancel" styleClass="button-secondary" text="Отмена" />
             </buttons>
         </ButtonBar>
     </children>

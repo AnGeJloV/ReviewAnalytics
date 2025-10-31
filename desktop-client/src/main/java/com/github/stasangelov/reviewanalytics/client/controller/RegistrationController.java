@@ -4,21 +4,14 @@ import com.github.stasangelov.reviewanalytics.client.model.RegistrationRequest;
 import com.github.stasangelov.reviewanalytics.client.model.UserDto;
 import com.github.stasangelov.reviewanalytics.client.service.ApiCallback;
 import com.github.stasangelov.reviewanalytics.client.service.AuthService;
+import com.github.stasangelov.reviewanalytics.client.util.AlertFactory;
 import com.github.stasangelov.reviewanalytics.client.util.ViewSwitcher;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.scene.control.Alert;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
-
-/**
- * Контроллер для окна регистрации ('registration-view.fxml').
- * Отвечает за сбор данных нового пользователя (имя, email, пароль),
- * отправку запроса на регистрацию через {@link AuthService} и обработку ответа от сервера.
- * В случае успеха информирует пользователя и перенаправляет его на экран входа.
- */
 
 public class RegistrationController {
 
@@ -31,6 +24,8 @@ public class RegistrationController {
 
     @FXML
     protected void onRegisterButtonClick(ActionEvent event) {
+        // Сначала скрываем старые ошибки
+        setInfoLabel(null);
 
         String name = nameField.getText();
         String email = emailField.getText();
@@ -50,14 +45,7 @@ public class RegistrationController {
             @Override
             public void onSuccess(UserDto result) {
                 Platform.runLater(() -> {
-                    // Показываем всплывающее окно об успехе
-                    Alert alert = new Alert(Alert.AlertType.INFORMATION);
-                    alert.setTitle("Успех");
-                    alert.setHeaderText("Регистрация прошла успешно!");
-                    alert.setContentText("Пользователь " + result.getName() + " был создан. Теперь вы можете войти.");
-                    alert.showAndWait();
-
-                    // Возвращаемся на экран входа
+                    AlertFactory.showInfo("Регистрация прошла успешно!", "Пользователь " + result.getName() + " был создан. Теперь вы можете войти.");
                     ViewSwitcher.switchScene(event, "login-view.fxml");
                 });
             }
@@ -80,6 +68,14 @@ public class RegistrationController {
     }
 
     private void setInfoLabel(String message) {
-        infoLabel.setText(message);
+        if (message == null || message.isEmpty()) {
+            infoLabel.setText("");
+            infoLabel.setManaged(false);
+            infoLabel.setVisible(false);
+        } else {
+            infoLabel.setText(message);
+            infoLabel.setManaged(true);
+            infoLabel.setVisible(true);
+        }
     }
 }

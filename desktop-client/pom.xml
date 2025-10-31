@@ -62,7 +62,32 @@
                     <mainClass>com.github.stasangelov.reviewanalytics.client.ClientApplication</mainClass>
                 </configuration>
             </plugin>
+            <!-- Плагин для сборки "fat JAR", запускаемого по двойному клику -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <version>3.6.0</version>
+                <configuration>
+                    <descriptorRefs>
+                        <!-- Говорим плагину собрать JAR со всеми зависимостями внутри -->
+                        <descriptorRef>jar-with-dependencies</descriptorRef>
+                    </descriptorRefs>
+                    <archive>
+                        <manifest>
+                            <mainClass>com.github.stasangelov.reviewanalytics.client.Launcher</mainClass>
+                        </manifest>
+                    </archive>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>make-assembly</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
-
 </project>

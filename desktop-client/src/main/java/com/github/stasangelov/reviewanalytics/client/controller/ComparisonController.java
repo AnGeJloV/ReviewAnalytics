@@ -9,50 +9,41 @@ import javafx.application.Platform;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
+import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.embed.swing.SwingFXUtils;
+import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.geometry.Pos;
 import javafx.scene.Node;
+import javafx.scene.SnapshotParameters;
 import javafx.scene.chart.AreaChart;
+import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.XYChart;
 import javafx.scene.control.Alert;
+import javafx.scene.control.Label;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-
-import javafx.geometry.Pos;
-import javafx.scene.chart.NumberAxis;
-import javafx.scene.control.Label;
+import javafx.scene.image.WritableImage;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
-
-import com.github.stasangelov.reviewanalytics.client.model.ProductSummaryDto;
-import javafx.event.ActionEvent;
-import javafx.fxml.FXML;
-import javafx.scene.Node;
-import javafx.scene.SnapshotParameters;
-import javafx.scene.control.Alert;
-import javafx.scene.image.WritableImage;
-import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
+
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
-import javafx.application.Platform;
 
 public class ComparisonController {
 
@@ -60,13 +51,60 @@ public class ComparisonController {
     @FXML private TableView<Map<String, Object>> comparisonTable;
     @FXML private FlowPane customLegendPane;
     @FXML private VBox areaChartContainer;
+    @FXML private VBox comparisonTableContainer;
+
+    @FXML private VBox placeholderPane;
+    @FXML private Label placeholderLabel;
+    @FXML private VBox contentPane;
 
     private final AnalyticsService analyticsService = new AnalyticsService();
 
     @FXML
     public void initialize() {
-        Platform.runLater(() -> comparisonTable.getParent().requestFocus());
+        // Добавляем "слушателя", который будет реагировать на изменения в списке сравнения
+        ComparisonService.getInstance().getItemsToCompare().addListener((ListChangeListener<ProductSummaryDto>) c -> {
+            loadComparisonData();
+        });
+
+        // Загружаем данные при первой загрузке вида
         loadComparisonData();
+    }
+
+    public void exportViewToPdf(ActionEvent event) {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Сохранить отчет по сравнению");
+        fileChooser.setInitialFileName("comparison_report.pdf");
+        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("PDF Documents", "*.pdf"));
+        File file = fileChooser.showSaveDialog(areaChartContainer.getScene().getWindow());
+
+        if (file != null) {
+            List<Long> productIds = ComparisonService.getInstance().getItemsToCompare().stream()
+                    .map(ProductSummaryDto::getProductId)
+                    .collect(Collectors.toList());
+            if (productIds.isEmpty()) {
+                new Alert(Alert.AlertType.WARNING, "Нет товаров для сравнения.").showAndWait();
+                return;
+            }
+            try {
+                Map<String, byte[]> images = new HashMap<>();
+                images.put("comparisonChart.png", snapshotNode(areaChartContainer));
+                images.put("comparisonTable.png", snapshotNode(comparisonTableContainer));
+
+                new Thread(() -> {
+                    try {
+                        byte[] pdfData = analyticsService.getComparisonPdf(productIds, images);
+                        Files.write(file.toPath(), pdfData);
+                        Platform.runLater(() -> new Alert(Alert.AlertType.INFORMATION, "Отчет успешно сохранен: " + file.getAbsolutePath()).showAndWait());
+                    } catch (IOException e) {
+                        Platform.runLater(() -> new Alert(Alert.AlertType.ERROR, "Не удалось сформировать или сохранить отчет: " + e.getMessage()).showAndWait());
+                        e.printStackTrace();
+                    }
+                }).start();
+            } catch (IOException e) {
+                new Alert(Alert.AlertType.ERROR, "Не удалось сделать снимок: " + e.getMessage()).showAndWait();
+                e.printStackTrace();
+            }
+        }
     }
 
     private void loadComparisonData() {
@@ -74,17 +112,34 @@ public class ComparisonController {
                 .map(ProductSummaryDto::getProductId)
                 .collect(Collectors.toList());
 
-        if (productIds.isEmpty()) {
-            // Показываем информационное сообщение, если ничего не выбрано
-            Platform.runLater(() -> {
-                Alert alert = new Alert(Alert.AlertType.INFORMATION);
-                alert.setTitle("Сравнение");
-                alert.setHeaderText("Товары для сравнения не выбраны.");
-                alert.setContentText("Пожалуйста, выберите от 2 до 4 товаров на главном экране для их сравнения.");
-                alert.showAndWait();
-            });
+        int count = productIds.size();
+
+        if (count < 2) {
+            // Показываем заглушку
+            placeholderPane.setVisible(true);
+            placeholderPane.setManaged(true);
+            // Скрываем контент и убираем его из расчета размеров
+            contentPane.setVisible(false);
+            contentPane.setManaged(false);
+
+            if (count == 0) {
+                placeholderLabel.setText("Выберите 2 или более товара на главном экране для их сравнения.");
+            } else {
+                placeholderLabel.setText("Выберите еще хотя бы один товар для начала сравнения.");
+            }
+
+            // Очищаем старые данные
+            comparisonChart.getData().clear();
+            comparisonTable.getColumns().clear();
+            comparisonTable.getItems().clear();
             return;
         }
+
+        // Показываем контент и включаем его в расчет размеров
+        placeholderPane.setVisible(false);
+        placeholderPane.setManaged(false);
+        contentPane.setVisible(true);
+        contentPane.setManaged(true);
 
         new Thread(() -> {
             try {
@@ -98,6 +153,7 @@ public class ComparisonController {
             }
         }).start();
     }
+
 
     private void updateChart(List<ComparisonDataDto> data) {
         comparisonChart.getData().clear();

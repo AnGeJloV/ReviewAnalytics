@@ -1,27 +1,31 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<?import javafx.geometry.Insets?>
-<?import javafx.scene.control.*?>
-<?import javafx.scene.layout.*?>
 
-<VBox xmlns="http://javafx.com/javafx"
-      xmlns:fx="http://javafx.com/fxml"
-      fx:controller="com.github.stasangelov.reviewanalytics.client.controller.UserManagementController"
-      prefHeight="500.0" prefWidth="800.0" spacing="10" styleClass="dashboard-background">
-    <padding><Insets top="15" right="15" bottom="15" left="15"/></padding>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox spacing="20.0" styleClass="content-background" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.github.stasangelov.reviewanalytics.client.controller.UserManagementController">
+    <padding>
+        <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
+    </padding>
     <children>
-        <Label styleClass="dashboard-title" text="Управление пользователями" />
-        <TableView fx:id="usersTable" VBox.vgrow="ALWAYS">
-            <columnResizePolicy>
-                <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
-            </columnResizePolicy>
-            <columns>
-                <TableColumn fx:id="nameCol" text="Имя" />
-                <TableColumn fx:id="emailCol" text="Email" />
-                <TableColumn fx:id="roleCol" text="Роль" />
-                <TableColumn fx:id="statusCol" text="Статус" />
-                <TableColumn fx:id="actionRoleCol" text="Сменить роль" />
-                <TableColumn fx:id="actionStatusCol" text="Сменить статус" />
-            </columns>
-        </TableView>
+        <VBox styleClass="chart-card" VBox.vgrow="ALWAYS">
+            <children>
+                <TableView fx:id="usersTable" VBox.vgrow="ALWAYS">
+                    <columnResizePolicy>
+                        <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
+                    </columnResizePolicy>
+                    <columns>
+                        <TableColumn fx:id="nameCol" text="Имя" />
+                        <TableColumn fx:id="emailCol" text="Email" />
+                        <TableColumn fx:id="roleCol" text="Роль" />
+                        <TableColumn fx:id="statusCol" text="Статус" />
+                        <TableColumn fx:id="actionRoleCol" style="-fx-alignment: center;" text="Сменить роль" />
+                        <TableColumn fx:id="actionStatusCol" style="-fx-alignment: center;" text="Сменить статус" />
+                    </columns>
+                </TableView>
+            </children>
+        </VBox>
     </children>
 </VBox>
