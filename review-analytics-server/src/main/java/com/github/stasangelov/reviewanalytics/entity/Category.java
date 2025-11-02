@@ -11,7 +11,6 @@ import java.util.Set;
 /**
  * Сущность, представляющая категорию товара (например, "Ноутбуки", "Смартфоны").
  */
-
 @Data
 @Entity
 @Table(name = "categories")
@@ -28,13 +27,9 @@ public class Category {
     @OneToMany(mappedBy = "category", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Product> products;
 
-    /**
-     * Набор критериев, применимых к этой категории.
-     * Связь Многие-ко-Многим.
-     */
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
-            name = "category_criteria", // Название связующей таблицы
+            name = "category_criteria",
             joinColumns = @JoinColumn(name = "category_id"),
             inverseJoinColumns = @JoinColumn(name = "criterion_id")
     )

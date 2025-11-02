@@ -1,8 +1,7 @@
 package com.github.stasangelov.reviewanalytics.service;
 
-import com.github.stasangelov.reviewanalytics.dto.CriterionDto;
+import com.github.stasangelov.reviewanalytics.dto.dictionary.CriterionDto;
 import com.github.stasangelov.reviewanalytics.entity.Criterion;
-import com.github.stasangelov.reviewanalytics.exception.ResourceNotFoundException;
 import com.github.stasangelov.reviewanalytics.repository.CriterionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -15,7 +14,6 @@ import java.util.stream.Collectors;
  * Сервис для управления сущностями Criterion (критерии оценки).
  * Предоставляет полный набор CRUD-операций и логику преобразования между Entity и DTO.
  */
-
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -37,11 +35,6 @@ public class CriterionService {
         return dto;
     }
 
-    /**
-     * Возвращает список критериев для конкретной категории.
-     * @param categoryId ID категории.
-     * @return Список DTO критериев.
-     */
     public List<CriterionDto> getByCategoryId(Long categoryId) {
         return criterionRepository.findByCategories_Id(categoryId).stream()
                 .map(this::toDto)

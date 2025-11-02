@@ -21,7 +21,6 @@ import java.util.Date;
  * - Валидация токена
  * - Извлечение данных (claims) из токена
  */
-
 @Component
 @RequiredArgsConstructor
 public class JwtTokenProvider {

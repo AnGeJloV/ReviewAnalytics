@@ -1,8 +1,11 @@
-package com.github.stasangelov.reviewanalytics.dto;
+package com.github.stasangelov.reviewanalytics.dto.analytics.dashboard;
 
 import lombok.Data;
 import java.util.List;
 
+/**
+ * Комплексный DTO, агрегирующий все данные для главной информационной панели.
+ */
 @Data
 public class DashboardDto {
     private KpiDto kpis;

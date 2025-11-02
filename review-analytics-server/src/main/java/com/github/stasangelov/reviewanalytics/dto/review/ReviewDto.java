@@ -1,4 +1,4 @@
-package com.github.stasangelov.reviewanalytics.dto;
+package com.github.stasangelov.reviewanalytics.dto.review;
 
 import com.github.stasangelov.reviewanalytics.entity.Review;
 import jakarta.validation.constraints.NotEmpty;
@@ -16,13 +16,11 @@ import java.util.Map;
  */
 @Data
 public class ReviewDto {
-    // Поля для чтения
     private Long id;
     private Review.ReviewStatus status;
     private String productName;
     private List<ReviewRatingDto> reviewRatings;
 
-    // Поля для записи (создание/обновление)
     @NotNull(message = "Товар должен быть указан")
     private Long productId;
 
@@ -33,5 +31,5 @@ public class ReviewDto {
     private Double integralRating;
 
     @NotEmpty(message = "Должна быть хотя бы одна оценка")
-    private Map<Long, Integer> ratings; // Карта [criterionId -> rating]
+    private Map<Long, Integer> ratings;
 }

@@ -11,7 +11,6 @@ import java.util.Set;
 /**
  * Сущность, представляющая критерий оценки в отзыве (например, "Качество сборки", "Цена").
  */
-
 @Data
 @Entity
 @Table(name = "criteria")
@@ -27,12 +26,8 @@ public class Criterion {
     private String name;
 
     @Column(nullable = false)
-    private Double weight; // Весовой коэффициент
+    private Double weight;
 
-    /**
-     * Обратная связь на категории, к которым относится этот критерий.
-     * `mappedBy` указывает, что главная сторона связи находится в поле 'criteria' класса Category.
-     */
     @ManyToMany(mappedBy = "criteria", fetch = FetchType.LAZY)
     @JsonIgnore
     private Set<Category> categories;

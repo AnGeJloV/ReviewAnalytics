@@ -10,7 +10,6 @@ import java.util.List;
  * Сущность, представляющая один отзыв на товар.
  * Является центральной сущностью для анализа.
  */
-
 @Data
 @Entity
 @Table(name = "reviews")
@@ -24,7 +23,7 @@ public class Review {
     private LocalDateTime dateCreated;
 
     @Column(name = "integral_rating")
-    private Double integralRating; // Общий рейтинг
+    private Double integralRating;
 
     @Enumerated(EnumType.STRING)
     @Column(length = 20, nullable = false)

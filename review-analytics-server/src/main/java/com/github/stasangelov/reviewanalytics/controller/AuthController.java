@@ -1,10 +1,9 @@
 package com.github.stasangelov.reviewanalytics.controller;
 
-
-import com.github.stasangelov.reviewanalytics.dto.AuthRequest;
-import com.github.stasangelov.reviewanalytics.dto.AuthResponse;
-import com.github.stasangelov.reviewanalytics.dto.RegistrationRequest;
-import com.github.stasangelov.reviewanalytics.dto.UserDto;
+import com.github.stasangelov.reviewanalytics.dto.auth.AuthRequest;
+import com.github.stasangelov.reviewanalytics.dto.auth.AuthResponse;
+import com.github.stasangelov.reviewanalytics.dto.auth.RegistrationRequest;
+import com.github.stasangelov.reviewanalytics.dto.user.UserDto;
 import com.github.stasangelov.reviewanalytics.entity.User;
 import com.github.stasangelov.reviewanalytics.service.UserService;
 import jakarta.validation.Valid;
@@ -17,15 +16,20 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * REST-контроллер для обработки запросов, связанных с аутентификацией и регистрацией.
+ * REST-контроллер для публичных эндпоинтов аутентификации и регистрации.
+ * Этот контроллер обрабатывает запросы, которые не требуют JWT-токена.
  */
-
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
 public class AuthController {
     private final UserService userService;
 
+    /**
+     * Регистрирует нового пользователя в системе.
+     * Принимает данные для регистрации и валидирует их.
+     * В случае успеха возвращает "безопасный" DTO пользователя.
+     */
     @PostMapping("/register")
     public ResponseEntity<UserDto> registerUser(@Valid @RequestBody RegistrationRequest request) {
         // 1. Вызываем сервис для выполнения бизнес-логики регистрации
@@ -38,6 +42,10 @@ public class AuthController {
         return new ResponseEntity<>(responseDto, HttpStatus.CREATED);
     }
 
+    /**
+     * Аутентифицирует пользователя по email и паролю.
+     * В случае успеха возвращает JWT-токен и роли пользователя.
+     */
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> loginUser(@RequestBody AuthRequest authRequest) {
         AuthResponse authResponse = userService.loginUser(authRequest);
@@ -45,7 +53,8 @@ public class AuthController {
     }
 
     /**
-     * Вспомогательный метод для преобразования сущности User в UserDto
+     * Преобразует сущность {@link User} в "безопасный" {@link UserDto}.
+     * Используется, чтобы не отправлять на клиент хэш пароля и другую служебную информацию.
      */
     private UserDto mapUserToUserDto(User user) {
         UserDto dto = new UserDto();
@@ -54,5 +63,4 @@ public class AuthController {
         dto.setEmail(user.getEmail());
         return dto;
     }
-
 }

@@ -10,7 +10,6 @@ import java.util.Optional;
  * Репозиторий для доступа к данным сущности {@link User}.
  * Предоставляет стандартные CRUD-операции и кастомные методы для поиска пользователей.
  */
-
 @Repository
 public interface UserRepository extends JpaRepository<User,Long> {
     Optional<User> findByEmail(String email);

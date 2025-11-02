@@ -1,8 +1,7 @@
 package com.github.stasangelov.reviewanalytics.service;
 
-import com.github.stasangelov.reviewanalytics.dto.CategoryDto;
+import com.github.stasangelov.reviewanalytics.dto.dictionary.CategoryDto;
 import com.github.stasangelov.reviewanalytics.entity.Category;
-import com.github.stasangelov.reviewanalytics.exception.ResourceNotFoundException;
 import com.github.stasangelov.reviewanalytics.repository.CategoryRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -14,7 +13,6 @@ import java.util.stream.Collectors;
 /**
  * Сервис для управления сущностями Category (категории товаров).
  */
-
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)

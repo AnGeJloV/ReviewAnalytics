@@ -1,11 +1,15 @@
 package com.github.stasangelov.reviewanalytics.service.mapper;
 
-import com.github.stasangelov.reviewanalytics.dto.ReviewDto;
-import com.github.stasangelov.reviewanalytics.dto.ReviewRatingDto;
+import com.github.stasangelov.reviewanalytics.dto.review.ReviewDto;
+import com.github.stasangelov.reviewanalytics.dto.review.ReviewRatingDto;
 import com.github.stasangelov.reviewanalytics.entity.Review;
 import org.springframework.stereotype.Component;
 import java.util.stream.Collectors;
 
+/**
+ * Маппер для преобразования сущности {@link Review} в ее "безопасное"
+ * представление для клиента — {@link ReviewDto}.
+ */
 @Component
 public class ReviewMapper {
 

@@ -1,4 +1,4 @@
-package com.github.stasangelov.reviewanalytics.dto;
+package com.github.stasangelov.reviewanalytics.dto.analytics.comparison;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

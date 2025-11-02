@@ -68,15 +68,27 @@ The server requires environment variables for database connection and security s
 
     > *Tip: For local development, you can skip this step and use the default values in `application.properties` by modifying them directly if needed.*
 
-#### 5. Run the Backend
+#### 5. Configure the Frontend (JavaFX)
+If you are running the client application from within IntelliJ IDEA, you need to configure the VM options to include the JavaFX modules.
+
+1.  Navigate to `Run -> Edit Configurations...`.
+2.  Find or create a run configuration for `ClientApplication`.
+3.  In the **VM options** field, add the following line. **Make sure to replace `path\to\your\javafx-sdk` with the actual path to your JavaFX SDK `lib` folder.**
+
+    ```
+    --module-path "path\to\your\javafx-sdk\lib" --add-modules javafx.controls,javafx.fxml,javafx.swing
+    ```
+    *Example for Windows:* `--module-path "C:\javafx-sdk-17.0.1\lib" --add-modules javafx.controls,javafx.fxml,javafx.swing`
+
+#### 6. Run the Backend
 Open the `review-analytics-server/src/main/java/com/github/stasangelov/reviewanalytics/ReviewAnalyticsApplication.java` class and run its `main()` method.
 The server will start on port `8080`.
 
-#### 6. Run the Frontend
+#### 7. Run the Frontend
 Open the `desktop-client/src/main/java/com/github/stasangelov/reviewanalytics/client/ClientApplication.java` class and run its `main()` method.
 The application login window will appear.
 
-#### 7. Log In
+#### 8. Log In
 On the first launch, the application creates two default users to facilitate testing:
 
 - **Administrator:**

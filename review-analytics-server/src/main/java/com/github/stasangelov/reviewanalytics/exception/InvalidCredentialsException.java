@@ -8,7 +8,6 @@ import org.springframework.web.bind.annotation.ResponseStatus;
  * конкретном случае: когда пользователь пытается войти в систему, но предоставляет
  * неверные учетные данные (email или пароль).
  */
-
 @ResponseStatus(HttpStatus.UNAUTHORIZED)
 public class InvalidCredentialsException extends RuntimeException {
     public InvalidCredentialsException(String message) {

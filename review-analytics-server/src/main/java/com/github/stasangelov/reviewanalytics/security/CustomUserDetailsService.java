@@ -15,7 +15,6 @@ import java.util.stream.Collectors;
  * Кастомная реализация UserDetailsService.
  * "Мост" между Spring Security и нашей базой данных пользователей.
  */
-
 @Service
 @RequiredArgsConstructor
 public class CustomUserDetailsService implements UserDetailsService {

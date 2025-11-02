@@ -1,9 +1,9 @@
 package com.github.stasangelov.reviewanalytics.service;
 
-import com.github.stasangelov.reviewanalytics.dto.AuthRequest;
-import com.github.stasangelov.reviewanalytics.dto.AuthResponse;
-import com.github.stasangelov.reviewanalytics.dto.RegistrationRequest;
-import com.github.stasangelov.reviewanalytics.dto.UserManagementDto;
+import com.github.stasangelov.reviewanalytics.dto.auth.AuthRequest;
+import com.github.stasangelov.reviewanalytics.dto.auth.AuthResponse;
+import com.github.stasangelov.reviewanalytics.dto.auth.RegistrationRequest;
+import com.github.stasangelov.reviewanalytics.dto.user.UserManagementDto;
 import com.github.stasangelov.reviewanalytics.entity.Role;
 import com.github.stasangelov.reviewanalytics.entity.User;
 import com.github.stasangelov.reviewanalytics.exception.InvalidCredentialsException;
@@ -29,9 +29,10 @@ import com.github.stasangelov.reviewanalytics.exception.OperationForbiddenExcept
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Реализация интерфейса {@link UserService}.
+ * Реализация сервиса для управления пользователями.
+ * Инкапсулирует бизнес-логику для регистрации, аутентификации
+ * и административных операций с пользователями.
  */
-
 @Service
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
@@ -41,6 +42,9 @@ public class UserServiceImpl implements UserService {
     private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider jwtTokenProvider;
 
+    /**
+     * Регистрирует нового пользователя в системе.
+     */
     @Override
     public User registerUser(RegistrationRequest request){
         // 1. Проверка, не занят ли email
@@ -64,6 +68,9 @@ public class UserServiceImpl implements UserService {
         return userRepository.save(user);
     }
 
+    /**
+     * Аутентифицирует пользователя и возвращает JWT-токен в случае успеха.
+     */
     @Override
     public AuthResponse loginUser(AuthRequest authRequest) {
         try {
@@ -99,6 +106,9 @@ public class UserServiceImpl implements UserService {
         }
     }
 
+    /**
+     * Возвращает список всех пользователей для страницы управления.
+     */
     @Transactional(readOnly = true)
     public List<UserManagementDto> getAllUsers() {
         return userRepository.findAll().stream()
@@ -112,6 +122,9 @@ public class UserServiceImpl implements UserService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Изменяет роль указанного пользователя.
+     */
     @Transactional
     public UserManagementDto changeUserRole(Long userId, Role.RoleName newRoleName, User currentUser) {
         if (userId.equals(currentUser.getId())) {
@@ -124,13 +137,15 @@ public class UserServiceImpl implements UserService {
         Role newRole = roleRepository.findByName(newRoleName)
                 .orElseThrow(() -> new RuntimeException("Роль " + newRoleName + " не найдена"));
 
-        // Устанавливаем только одну роль
         userToUpdate.setRoles(new HashSet<>(Set.of(newRole)));
         User updatedUser = userRepository.save(userToUpdate);
 
         return new UserManagementDto(updatedUser.getId(), updatedUser.getName(), updatedUser.getEmail(), updatedUser.isActive(), updatedUser.getRoles());
     }
 
+    /**
+     * Изменяет статус пользователя (активирует/блокирует).
+     */
     @Transactional
     public UserManagementDto changeUserStatus(Long userId, boolean newStatus, User currentUser) {
         if (userId.equals(currentUser.getId())) {

@@ -25,7 +25,6 @@ import java.util.Optional;
  * Его основная задача - проверить наличие и валидность JWT-токена в заголовке Authorization.
  * Если токен валиден, фильтр аутентифицирует пользователя в контексте Spring Security.
  */
-
 @Component
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
@@ -41,7 +40,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         try {
             if (StringUtils.hasText(token) && jwtTokenProvider.validateToken(token)) {
-                // Получаем username (в вашем коде — это email)
+                // Получаем username (email)
                 String username = jwtTokenProvider.getUsername(token);
 
                 if (username == null) {

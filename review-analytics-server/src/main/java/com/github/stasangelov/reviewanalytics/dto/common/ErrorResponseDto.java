@@ -1,9 +1,12 @@
-package com.github.stasangelov.reviewanalytics.dto;
+package com.github.stasangelov.reviewanalytics.dto.common;
 
 import lombok.Data;
 
 import java.time.LocalDateTime;
 
+/**
+ * DTO для стандартизированного ответа об ошибке от сервера.
+ */
 @Data
 public class ErrorResponseDto {
     private String timestamp;

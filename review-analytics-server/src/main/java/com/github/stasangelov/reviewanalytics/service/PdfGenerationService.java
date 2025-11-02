@@ -1,6 +1,10 @@
 package com.github.stasangelov.reviewanalytics.service;
 
-import com.github.stasangelov.reviewanalytics.dto.*;
+import com.github.stasangelov.reviewanalytics.dto.analytics.comparison.ComparisonDataDto;
+import com.github.stasangelov.reviewanalytics.dto.analytics.comparison.CriteriaProfileDto;
+import com.github.stasangelov.reviewanalytics.dto.analytics.dashboard.DashboardDto;
+import com.github.stasangelov.reviewanalytics.dto.analytics.product.ProductDetailsDto;
+import com.github.stasangelov.reviewanalytics.dto.review.ReviewRatingDto;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
@@ -19,14 +23,20 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * Сервис, отвечающий за генерацию PDF-отчетов.
+ * Использует библиотеку Apache PDFBox для создания документов,
+ * вставки текста, таблиц и изображений (снимков графиков с клиента).
+ */
 @Service
 public class PdfGenerationService {
 
     private PDType0Font font;
     private PDType0Font fontBold;
 
-    // --- Утилитарные методы для генерации PDF ---
-
+    /**
+     * Загружает кастомные шрифты с поддержкой кириллицы из ресурсов.
+     */
     private void loadFonts(PDDocument document) throws IOException {
         try (InputStream fontStream = getClass().getClassLoader().getResourceAsStream("fonts/DejaVuSans.ttf");
              InputStream fontBoldStream = getClass().getClassLoader().getResourceAsStream("fonts/DejaVuSans-Bold.ttf")) {
@@ -38,8 +48,9 @@ public class PdfGenerationService {
         }
     }
 
-    // --- Основной метод для генерации отчета по дашборду ---
-
+    /**
+     * Создает многостраничный PDF-отчет для главной информационной панели.
+     */
     public byte[] generateDashboardPdf(DashboardDto data, Map<String, byte[]> chartImages) throws IOException {
         try (PDDocument document = new PDDocument()) {
             loadFonts(document);
@@ -91,14 +102,15 @@ public class PdfGenerationService {
                 addChartToNewPage(document, "Распределение оценок по критериям", chartImages.get("distributionChart"));
             }
 
-            // ... (здесь можно добавить таблицу ProductSummary, если нужно) ...
-
             ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
             document.save(byteArrayOutputStream);
             return byteArrayOutputStream.toByteArray();
         }
     }
 
+    /**
+     * Создает новую страницу и вставляет на нее заголовок и изображение графика.
+     */
     private void addChartToNewPage(PDDocument document, String title, byte[] imageBytes) throws IOException {
         PDPage page = new PDPage(PDRectangle.A4);
         document.addPage(page);
@@ -121,8 +133,9 @@ public class PdfGenerationService {
         }
     }
 
-    // --- Вспомогательные методы ---
-
+    /**
+     * Рисует одну строку текста на странице.
+     */
     private void addText(PDPageContentStream stream, PDType0Font font, int fontSize, float x, float y, String text) throws IOException {
         stream.beginText();
         stream.setFont(font, fontSize);
@@ -131,6 +144,10 @@ public class PdfGenerationService {
         stream.endText();
     }
 
+    /**
+     * Рисует таблицу с заголовком, многострочными заголовками колонок и данными.
+     * Возвращает Y-координату после отрисовки таблицы.
+     */
     private float drawTable(PDDocument doc, PDPageContentStream stream, float x, float y, String title, List<String> headers, List<List<String>> data, float[] colWidths) throws IOException {
         final PDPage page = doc.getPage(doc.getNumberOfPages() - 1);
         float tableTopY = y;
@@ -144,7 +161,6 @@ public class PdfGenerationService {
         addText(stream, fontBold, 14, x, tableTopY, title);
         tableTopY -= 30;
 
-
         final float headerY = tableTopY - 15;
         float nextX = x;
         float maxHeaderHeight = 0;
@@ -152,7 +168,6 @@ public class PdfGenerationService {
         List<List<String>> wrappedHeaders = new ArrayList<>();
         for (int i = 0; i < headers.size(); i++) {
             float colWidth = tableWidth * colWidths[i];
-            // Используем обычный шрифт (font) вместо жирного (fontBold)
             List<String> lines = splitTextIntoLines(headers.get(i), font, headerFontSize, colWidth - 2 * cellMargin);
             wrappedHeaders.add(lines);
             if (lines.size() * (headerFontSize + 2f) > maxHeaderHeight) {
@@ -208,7 +223,9 @@ public class PdfGenerationService {
         return tableTopY;
     }
 
-    // Замените старый drawMultilineText на этот, который поддерживает выравнивание
+    /**
+     * Рисует многострочный текст с заданным выравниванием внутри колонки.
+     */
     private void drawMultilineText(List<String> lines, PDPageContentStream stream, float x, float colWidth, float y, float leading, String align, PDType0Font font) throws IOException {
         final int fontSize = 9; // Размер шрифта для заголовков
         stream.setFont(font, fontSize);
@@ -231,9 +248,8 @@ public class PdfGenerationService {
         }
     }
 
-
     /**
-     * Разбивает текст на строки, чтобы он поместился в заданную ширину.
+     * Разбивает длинную строку на несколько строк, чтобы она поместилась в заданную ширину.
      */
     private List<String> splitTextIntoLines(String text, PDType0Font font, int fontSize, float maxWidth) throws IOException {
         List<String> lines = new ArrayList<>();
@@ -255,7 +271,10 @@ public class PdfGenerationService {
         return lines;
     }
 
-    // Заглушки для других отчетов
+
+    /**
+     * Создает многостраничный PDF-отчет для страницы детализации товара.
+     */
     public byte[] generateProductDetailsPdf(ProductDetailsDto data, byte[] chartImage) throws IOException {
         try (PDDocument document = new PDDocument()) {
             loadFonts(document);
@@ -310,6 +329,9 @@ public class PdfGenerationService {
         }
     }
 
+    /**
+     * Создает страницу (альбомной ориентации) с таблицей всех отзывов на товар.
+     */
     private void generateReviewsTablePage(PDDocument document, ProductDetailsDto data) throws IOException {
         PDPage page = new PDPage(new PDRectangle(PDRectangle.A4.getHeight(), PDRectangle.A4.getWidth()));
         document.addPage(page);
@@ -351,6 +373,10 @@ public class PdfGenerationService {
             drawTable(document, contentStream, 50, 550, "Список отзывов по товару", headers, tableData, colWidths);
         }
     }
+
+    /**
+     * Создает многостраничный PDF-отчет для страницы сравнения товаров.
+     */
     public byte[] generateComparisonPdf(List<ComparisonDataDto> data, Map<String, byte[]> images) throws IOException {
         try (PDDocument document = new PDDocument()) {
             loadFonts(document);
@@ -405,5 +431,4 @@ public class PdfGenerationService {
             return byteArrayOutputStream.toByteArray();
         }
     }
-
 }

@@ -10,7 +10,6 @@ import java.util.List;
  * Репозиторий для доступа к данным сущности {@link Review}.
  * Позволяет управлять отзывами в базе данных.
  */
-
 @Repository
 public interface ReviewRepository extends JpaRepository<Review,Long> {
     /**

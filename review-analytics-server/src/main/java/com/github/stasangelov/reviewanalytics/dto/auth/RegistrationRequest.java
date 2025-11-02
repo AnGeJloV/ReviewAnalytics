@@ -1,4 +1,4 @@
-package com.github.stasangelov.reviewanalytics.dto;
+package com.github.stasangelov.reviewanalytics.dto.auth;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -9,7 +9,6 @@ import lombok.Data;
  * DTO для запроса на регистрацию нового пользователя.
  * Содержит данные, которые клиент отправляет на сервер для создания учетной записи.
  */
-
 @Data
 public class RegistrationRequest {
 

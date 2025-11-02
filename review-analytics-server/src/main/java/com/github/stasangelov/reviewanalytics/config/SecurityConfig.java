@@ -20,7 +20,6 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
  * Конфигурационный класс для Spring Security.
  * Здесь мы определяем основные компоненты безопасности приложения.
  */
-
 @Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor

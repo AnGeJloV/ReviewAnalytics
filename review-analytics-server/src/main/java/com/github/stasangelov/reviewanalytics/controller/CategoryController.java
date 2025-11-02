@@ -1,10 +1,8 @@
 package com.github.stasangelov.reviewanalytics.controller;
 
-import com.github.stasangelov.reviewanalytics.dto.CategoryDto;
+import com.github.stasangelov.reviewanalytics.dto.dictionary.CategoryDto;
 import com.github.stasangelov.reviewanalytics.service.CategoryService;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -12,15 +10,19 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 /**
- * Получает список всех категорий.
+ * REST-контроллер для управления категориями товаров.
+ * Предоставляет эндпоинты для получения справочной информации о категориях.
+ * Доступен ролям ANALYST и ADMIN.
  */
-
 @RestController
 @RequestMapping("/api/categories")
 @RequiredArgsConstructor
 public class CategoryController {
     private final CategoryService categoryService;
 
+    /**
+     * Возвращает полный список всех категорий товаров.
+     */
     @GetMapping
     @PreAuthorize("hasAnyAuthority('ADMIN', 'ANALYST')")
     public ResponseEntity<List<CategoryDto>> getAllCategories() {

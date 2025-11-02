@@ -9,7 +9,6 @@ import java.util.List;
 /**
  * Репозиторий для доступа к данным сущности {@link Criterion}.
  */
-
 @Repository
 public interface CriterionRepository extends JpaRepository<Criterion,Long> {
     /**

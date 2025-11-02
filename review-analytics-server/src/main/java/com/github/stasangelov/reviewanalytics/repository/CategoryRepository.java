@@ -7,7 +7,6 @@ import org.springframework.stereotype.Repository;
 /**
  * Репозиторий для доступа к данным сущности {@link Category}.
  */
-
 @Repository
 public interface CategoryRepository extends JpaRepository<Category,Long> {
     Long id(Long id);

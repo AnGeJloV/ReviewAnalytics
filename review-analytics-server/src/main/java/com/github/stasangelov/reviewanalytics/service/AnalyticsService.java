@@ -1,6 +1,9 @@
 package com.github.stasangelov.reviewanalytics.service;
 
-import com.github.stasangelov.reviewanalytics.dto.*;
+import com.github.stasangelov.reviewanalytics.dto.analytics.comparison.CriteriaProfileDto;
+import com.github.stasangelov.reviewanalytics.dto.analytics.dashboard.*;
+import com.github.stasangelov.reviewanalytics.dto.analytics.product.ProductDetailsDto;
+import com.github.stasangelov.reviewanalytics.dto.analytics.product.ProductSummaryDto;
 import com.github.stasangelov.reviewanalytics.entity.Product;
 import com.github.stasangelov.reviewanalytics.entity.Review;
 import com.github.stasangelov.reviewanalytics.exception.ResourceNotFoundException;
@@ -20,9 +23,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import com.github.stasangelov.reviewanalytics.dto.ComparisonDataDto;
-import com.github.stasangelov.reviewanalytics.entity.Product;
+import com.github.stasangelov.reviewanalytics.dto.analytics.comparison.ComparisonDataDto;
 
+/**
+ * Сервис, инкапсулирующий всю бизнес-логику для выполнения аналитических запросов.
+ * Этот класс является "мозгом" приложения, выполняя сложные JPQL и нативные SQL-запросы
+ * для агрегации данных и подготовки их к отображению на клиенте.
+ */
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -33,8 +40,10 @@ public class AnalyticsService {
     private final ReviewMapper reviewMapper;
 
     /**
-     * Главный метод, который собирает все данные для дашборда с учетом фильтров.
+     * Собирает все данные для главной информационной панели (дашборда).
+     * Является основной точкой входа, которая вызывает все необходимые методы-калькуляторы.
      */
+
     public DashboardDto getDashboardData(LocalDate startDate, LocalDate endDate, Long categoryId) {
         DashboardDto dashboard = new DashboardDto();
 
@@ -62,14 +71,14 @@ public class AnalyticsService {
     }
 
     /**
-     * НОВЫЙ МЕТОД: Возвращает сводную аналитику по всем товарам для таблицы.
+     * Возвращает сводную аналитику по всем товарам для отображения в главной таблице.
      */
     public List<ProductSummaryDto> getProductsSummary(LocalDate startDate, LocalDate endDate, Long categoryId) {
         LocalDateTime startDateTime = (startDate != null) ? startDate.atStartOfDay() : null;
         LocalDateTime endDateTime = (endDate != null) ? endDate.plusDays(1).atStartOfDay() : null;
 
         StringBuilder jpqlBuilder = new StringBuilder(
-                "SELECT NEW com.github.stasangelov.reviewanalytics.dto.ProductSummaryDto(" +
+                "SELECT NEW com.github.stasangelov.reviewanalytics.dto.analytics.product.ProductSummaryDto(" +
                         "   p.id, p.name, p.category.name, p.brand, COUNT(r), AVG(r.integralRating)" +
                         ") " +
                         "FROM Product p LEFT JOIN Review r ON r.product = p AND r.status = 'ACTIVE' "
@@ -103,11 +112,11 @@ public class AnalyticsService {
     }
 
     /**
-     * НОВЫЙ МЕТОД: Возвращает полную детализацию по одному товару.
+     * Возвращает полную детализацию по одному товару, включая его профиль и все отзывы.
      */
     public ProductDetailsDto getProductDetails(Long productId) {
         // 1. Находим профиль по критериям (средние оценки)
-        String profileJpql = "SELECT NEW com.github.stasangelov.reviewanalytics.dto.CriteriaProfileDto(" +
+        String profileJpql = "SELECT NEW com.github.stasangelov.reviewanalytics.dto.analytics.comparison.CriteriaProfileDto(" +
                 "   rr.criterion.name, AVG(rr.rating)" +
                 ") " +
                 "FROM ReviewRating rr JOIN rr.review r " +
@@ -153,9 +162,17 @@ public class AnalyticsService {
         return details;
     }
 
+    /**
+     * Собирает данные для сравнения нескольких товаров по их профилям критериев.
+     */
+    public List<ComparisonDataDto> getComparisonData(List<Long> productIds) {
+        return productIds.stream()
+                .map(this::getProductProfileForComparison)
+                .collect(Collectors.toList());
+    }
 
     /**
-     * НОВЫЙ МЕТОД: Рассчитывает распределение оценок (1-5) по каждому критерию.
+     * Рассчитывает распределение оценок (1-5) по каждому критерию.
      */
     private List<RatingDistributionDto> calculateRatingDistribution(LocalDateTime startDateTime, LocalDateTime endDateTime, Long categoryId) {
         // Этот запрос проще сделать нативным SQL с использованием CASE
@@ -210,11 +227,11 @@ public class AnalyticsService {
 
 
     /**
-     * НОВЫЙ МЕТОД: Рассчитывает средний рейтинг для каждого бренда в рамках одной категории.
+     * Рассчитывает средний рейтинг для каждого бренда в рамках одной категории.
      */
     private List<BrandRatingDto> calculateBrandRatings(LocalDateTime startDateTime, LocalDateTime endDateTime, Long categoryId) {
         StringBuilder jpqlBuilder = new StringBuilder(
-                "SELECT NEW com.github.stasangelov.reviewanalytics.dto.BrandRatingDto(" +
+                "SELECT NEW com.github.stasangelov.reviewanalytics.dto.analytics.dashboard.BrandRatingDto(" +
                         "   r.product.brand, " +
                         "   AVG(r.integralRating)" +
                         ") " +
@@ -239,7 +256,7 @@ public class AnalyticsService {
      */
     private List<CategoryRatingDto> calculateCategoryRatings(LocalDateTime startDateTime, LocalDateTime endDateTime, Long categoryId) {
         StringBuilder jpqlBuilder = new StringBuilder(
-                "SELECT NEW com.github.stasangelov.reviewanalytics.dto.CategoryRatingDto(" +
+                "SELECT NEW com.github.stasangelov.reviewanalytics.dto.analytics.dashboard.CategoryRatingDto(" +
                         "   r.product.category.name, " +
                         "   AVG(r.integralRating)" +
                         ") " +
@@ -346,32 +363,13 @@ public class AnalyticsService {
     }
 
     /**
-     * Вспомогательный метод, который добавляет WHERE условия к JPQL запросу.
-     */
-    private void addQueryFilters(StringBuilder jpqlBuilder, Map<String, Object> parameters, LocalDateTime startDateTime, LocalDateTime endDateTime, Long categoryId) {
-        if (startDateTime != null) {
-            jpqlBuilder.append(" AND r.dateCreated >= :startDate");
-            parameters.put("startDate", startDateTime);
-        }
-        if (endDateTime != null) {
-            jpqlBuilder.append(" AND r.dateCreated < :endDate");
-            parameters.put("endDate", endDateTime);
-        }
-        if (categoryId != null) {
-            // Для фильтрации по категории нам нужно сделать JOIN
-            jpqlBuilder.append(" AND r.product.category.id = :categoryId");
-            parameters.put("categoryId", categoryId);
-        }
-    }
-
-    /**
      * Находит топ-N лучших или худших товаров.
      * @param limit Количество товаров для выборки.
      * @param direction "DESC" для лучших, "ASC" для худших.
      */
     private List<TopProductDto> findTopRatedProducts(int limit, String direction, LocalDateTime startDateTime, LocalDateTime endDateTime, Long categoryId) {
         StringBuilder jpqlBuilder = new StringBuilder(
-                "SELECT NEW com.github.stasangelov.reviewanalytics.dto.TopProductDto(" +
+                "SELECT NEW com.github.stasangelov.reviewanalytics.dto.analytics.dashboard.TopProductDto(" +
                         "r.product.id, r.product.name, AVG(r.integralRating) as avg_rating) " +
                         "FROM Review r WHERE r.status = :status"
         );
@@ -388,16 +386,6 @@ public class AnalyticsService {
 
         return query.setMaxResults(limit).getResultList();
     }
-    /**
-     * НОВЫЙ МЕТОД: Собирает данные для сравнения нескольких товаров.
-     * @param productIds Список ID товаров для сравнения.
-     * @return Список DTO, где каждый элемент содержит профиль одного товара.
-     */
-    public List<ComparisonDataDto> getComparisonData(List<Long> productIds) {
-        return productIds.stream()
-                .map(this::getProductProfileForComparison)
-                .collect(Collectors.toList());
-    }
 
     /**
      * Вспомогательный метод для получения профиля одного товара.
@@ -408,7 +396,7 @@ public class AnalyticsService {
             throw new ResourceNotFoundException("Товар с id " + productId + " не найден");
         }
 
-        String jpql = "SELECT NEW com.github.stasangelov.reviewanalytics.dto.CriteriaProfileDto(" +
+        String jpql = "SELECT NEW com.github.stasangelov.reviewanalytics.dto.analytics.comparison.CriteriaProfileDto(" +
                 "   rr.criterion.name, AVG(rr.rating)" +
                 ") " +
                 "FROM ReviewRating rr JOIN rr.review r " +
@@ -424,5 +412,24 @@ public class AnalyticsService {
         dto.setProductName(product.getName());
         dto.setCriteriaProfile(profile);
         return dto;
+    }
+
+    /**
+     * Вспомогательный метод, который добавляет WHERE условия к JPQL запросу.
+     */
+    private void addQueryFilters(StringBuilder jpqlBuilder, Map<String, Object> parameters, LocalDateTime startDateTime, LocalDateTime endDateTime, Long categoryId) {
+        if (startDateTime != null) {
+            jpqlBuilder.append(" AND r.dateCreated >= :startDate");
+            parameters.put("startDate", startDateTime);
+        }
+        if (endDateTime != null) {
+            jpqlBuilder.append(" AND r.dateCreated < :endDate");
+            parameters.put("endDate", endDateTime);
+        }
+        if (categoryId != null) {
+            // Для фильтрации по категории нам нужно сделать JOIN
+            jpqlBuilder.append(" AND r.product.category.id = :categoryId");
+            parameters.put("categoryId", categoryId);
+        }
     }
 }

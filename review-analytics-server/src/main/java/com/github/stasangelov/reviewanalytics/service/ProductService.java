@@ -1,9 +1,7 @@
 package com.github.stasangelov.reviewanalytics.service;
 
-import com.github.stasangelov.reviewanalytics.dto.ProductDto;
-import com.github.stasangelov.reviewanalytics.entity.Category;
+import com.github.stasangelov.reviewanalytics.dto.dictionary.ProductDto;
 import com.github.stasangelov.reviewanalytics.entity.Product;
-import com.github.stasangelov.reviewanalytics.exception.ResourceNotFoundException;
 import com.github.stasangelov.reviewanalytics.repository.CategoryRepository;
 import com.github.stasangelov.reviewanalytics.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
@@ -13,6 +11,11 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * Сервис для управления сущностями "Товар" ({@link Product}).
+ * Предоставляет методы для получения списка товаров и преобразования их в DTO.
+ * Все операции по умолчанию выполняются в транзакции только для чтения.
+ */
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)

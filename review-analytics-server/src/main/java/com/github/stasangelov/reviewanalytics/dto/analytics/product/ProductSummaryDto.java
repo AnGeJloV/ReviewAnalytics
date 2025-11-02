@@ -1,9 +1,12 @@
-package com.github.stasangelov.reviewanalytics.dto;
+package com.github.stasangelov.reviewanalytics.dto.analytics.product;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+/**
+ * DTO со сводной информацией о товаре для отображения в таблицах.
+ */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

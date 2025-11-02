@@ -1,11 +1,10 @@
-package com.github.stasangelov.reviewanalytics.dto;
+package com.github.stasangelov.reviewanalytics.dto.dictionary;
 
 import lombok.Data;
 
 /**
  * DTO для сущности "Товар".
  */
-
 @Data
 public class ProductDto {
     private Long id;

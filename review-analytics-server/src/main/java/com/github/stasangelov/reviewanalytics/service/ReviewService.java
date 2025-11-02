@@ -1,10 +1,11 @@
 package com.github.stasangelov.reviewanalytics.service;
 
-import com.github.stasangelov.reviewanalytics.dto.ReviewDto;
-import com.github.stasangelov.reviewanalytics.dto.ReviewRatingDto;
+import com.github.stasangelov.reviewanalytics.dto.review.ReviewDto;
+import com.github.stasangelov.reviewanalytics.dto.review.ReviewRatingDto;
 import com.github.stasangelov.reviewanalytics.entity.*;
 import com.github.stasangelov.reviewanalytics.exception.ResourceNotFoundException;
 import com.github.stasangelov.reviewanalytics.repository.*;
+import com.github.stasangelov.reviewanalytics.service.mapper.ReviewMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -12,6 +13,11 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * Сервис для управления сущностями "Отзыв" ({@link Review}).
+ * Предоставляет полную бизнес-логику для создания, чтения, обновления
+ * и модерации отзывов. Все операции по умолчанию выполняются в одной транзакции.
+ */
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -20,12 +26,20 @@ public class ReviewService {
     private final ReviewRepository reviewRepository;
     private final ProductRepository productRepository;
     private final CriterionRepository criterionRepository;
+    private final ReviewMapper reviewMapper;
 
+    /**
+     * Возвращает список всех отзывов в системе.
+     */
     @Transactional(readOnly = true)
     public List<ReviewDto> getAll() {
-        return reviewRepository.findAll().stream().map(this::toDto).collect(Collectors.toList());
+        return reviewRepository.findAll().stream().map(reviewMapper::toDto).collect(Collectors.toList());
     }
 
+    /**
+     * Создает новый отзыв, связывает его с товаром и критериями,
+     * рассчитывает интегральный рейтинг и сохраняет в БД.
+     */
     public ReviewDto create(ReviewDto reviewDto) {
         Product product = productRepository.findById(reviewDto.getProductId())
                 .orElseThrow(() -> new ResourceNotFoundException("Товар с id " + reviewDto.getProductId() + " не найден"));
@@ -48,9 +62,13 @@ public class ReviewService {
         review.setReviewRatings(ratings);
         review.setIntegralRating(calculateIntegralRating(review));
 
-        return toDto(reviewRepository.save(review));
+        return reviewMapper.toDto(reviewRepository.save(review));
     }
 
+    /**
+     * Обновляет существующий отзыв по его ID.
+     * Заменяет старые оценки на новые и пересчитывает интегральный рейтинг.
+     */
     public ReviewDto update(Long id, ReviewDto reviewDto) {
         Review review = reviewRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Отзыв с id " + id + " не найден"));
@@ -75,23 +93,22 @@ public class ReviewService {
 
         review.setIntegralRating(calculateIntegralRating(review));
 
-        return toDto(reviewRepository.save(review));
+        return reviewMapper.toDto(reviewRepository.save(review));
     }
 
+    /**
+     * Изменяет статус отзыва (модерация).
+     */
     public ReviewDto changeStatus(Long id, Review.ReviewStatus newStatus) {
         Review review = reviewRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Отзыв с id " + id + " не найден"));
         review.setStatus(newStatus);
-
-        // TODO: Вызвать пересчет общей аналитики для товара, т.к. один отзыв был исключен/включен
-
-        return toDto(reviewRepository.save(review));
+        return reviewMapper.toDto(reviewRepository.save(review));
     }
+
     /**
      * Рассчитывает взвешенный интегральный рейтинг для одного отзыва.
-     * Формула: (Сумма(оценка * вес)) / (Сумма(весов))
-     * @param review Сущность отзыва с его оценками.
-     * @return Целочисленное значение рейтинга (в примере округляем до целого).
+     * Формула: (Сумма(оценка * вес критерия)) / (Сумма(весов всех критериев)).
      */
     private Double calculateIntegralRating(Review review) {
         if (review.getReviewRatings() == null || review.getReviewRatings().isEmpty()) {
@@ -108,31 +125,9 @@ public class ReviewService {
         }
 
         if (totalWeight == 0) {
-            return 0.0; // Избегаем деления на ноль
+            return 0.0;
         }
 
-        // Округляем до ближайшего целого. Можно использовать Math.round() для типа long.
         return weightedSum / totalWeight;
-    }
-
-    private ReviewDto toDto(Review review) {
-        ReviewDto dto = new ReviewDto();
-        dto.setId(review.getId());
-        dto.setDateCreated(review.getDateCreated());
-        dto.setStatus(review.getStatus());
-        dto.setProductId(review.getProduct().getId());
-        dto.setProductName(review.getProduct().getName());
-        dto.setIntegralRating(review.getIntegralRating());
-
-        List<ReviewRatingDto> ratingDtos = review.getReviewRatings().stream().map(rating -> {
-            ReviewRatingDto ratingDto = new ReviewRatingDto();
-            ratingDto.setCriterionId(rating.getCriterion().getId());
-            ratingDto.setCriterionName(rating.getCriterion().getName());
-            ratingDto.setRating(rating.getRating());
-            return ratingDto;
-        }).collect(Collectors.toList());
-        dto.setReviewRatings(ratingDtos);
-
-        return dto;
     }
 }

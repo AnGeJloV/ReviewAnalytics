@@ -1,10 +1,13 @@
-package com.github.stasangelov.reviewanalytics.dto;
+package com.github.stasangelov.reviewanalytics.dto.user;
 
 import com.github.stasangelov.reviewanalytics.entity.Role;
 import lombok.Data;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+/**
+ * DTO для отображения информации о пользователе на странице управления.
+ */
 @Data
 public class UserManagementDto {
     private Long id;

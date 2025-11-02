@@ -1,7 +1,10 @@
-package com.github.stasangelov.reviewanalytics.dto;
+package com.github.stasangelov.reviewanalytics.dto.analytics.dashboard;
 
 import lombok.Data;
 
+/**
+ * DTO для данных о распределении оценок (1-5) по одному критерию.
+ */
 @Data
 public class RatingDistributionDto {
     private String criterionName;

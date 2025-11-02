@@ -2,10 +2,10 @@ package com.github.stasangelov.reviewanalytics.controller;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.stasangelov.reviewanalytics.dto.DashboardDto;
+import com.github.stasangelov.reviewanalytics.dto.analytics.dashboard.DashboardDto;
 import com.github.stasangelov.reviewanalytics.service.AnalyticsService;
-import com.github.stasangelov.reviewanalytics.dto.ProductDetailsDto;
-import com.github.stasangelov.reviewanalytics.dto.ProductSummaryDto;
+import com.github.stasangelov.reviewanalytics.dto.analytics.product.ProductDetailsDto;
+import com.github.stasangelov.reviewanalytics.dto.analytics.product.ProductSummaryDto;
 import com.github.stasangelov.reviewanalytics.service.PdfGenerationService;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
@@ -16,7 +16,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import com.github.stasangelov.reviewanalytics.dto.ComparisonDataDto;
+import com.github.stasangelov.reviewanalytics.dto.analytics.comparison.ComparisonDataDto;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.bind.annotation.RequestPart;
 
@@ -26,22 +26,26 @@ import java.util.List;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * REST-контроллер для всех аналитических запросов.
+ * Предоставляет эндпоинты для получения агрегированных данных,
+ * детализации, сравнения, а также для генерации PDF-отчетов.
+ * Доступен ролям ANALYST и ADMIN.
+ */
 @RestController
 @RequestMapping("/api/analytics")
 @RequiredArgsConstructor
-@PreAuthorize("hasAnyAuthority('ADMIN', 'ANALYST')") // Доступен обеим ролям
+@PreAuthorize("hasAnyAuthority('ADMIN', 'ANALYST')")
 public class AnalyticsController {
 
+    // --- Поля и зависимости ---
     private final AnalyticsService analyticsService;
     private final PdfGenerationService pdfGenerationService;
     private final ObjectMapper objectMapper;
 
     /**
      * Возвращает все агрегированные данные для главной информационной панели.
-     * Теперь принимает необязательные параметры для фильтрации.
-     * @param startDate Начальная дата периода (формат yyyy-MM-dd).
-     * @param endDate Конечная дата периода (формат yyyy-MM-dd).
-     * @param categoryId ID категории для фильтрации.
+     * Принимает необязательные параметры для фильтрации.
      */
     @GetMapping("/dashboard")
     public ResponseEntity<DashboardDto> getDashboardData(
@@ -49,11 +53,11 @@ public class AnalyticsController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
             @RequestParam(required = false) Long categoryId
     ) {
-        // Передаем полученные параметры в сервис
         return ResponseEntity.ok(analyticsService.getDashboardData(startDate, endDate, categoryId));
     }
+
     /**
-     * НОВЫЙ ЭНДПОИНТ: Возвращает сводную информацию по товарам для таблицы.
+     * Возвращает сводную информацию по товарам для главной таблицы.
      */
     @GetMapping("/products-summary")
     public ResponseEntity<List<ProductSummaryDto>> getProductsSummary(
@@ -65,15 +69,15 @@ public class AnalyticsController {
     }
 
     /**
-     * НОВЫЙ ЭНДПОИНТ: Возвращает детализированную информацию по одному товару.
+     * Возвращает детализированную информацию по одному товару.
      */
     @GetMapping("/product/{productId}")
     public ResponseEntity<ProductDetailsDto> getProductDetails(@PathVariable Long productId) {
         return ResponseEntity.ok(analyticsService.getProductDetails(productId));
     }
+
     /**
-     * НОВЫЙ ЭНДПОИНТ: Принимает список ID и возвращает данные для сравнения.
-     * Используем POST, так как передача списка ID в GET-запросе может быть неудобной.
+     * Принимает список ID товаров и возвращает данные для их сравнения.
      */
     @PostMapping("/compare")
     public ResponseEntity<List<ComparisonDataDto>> getComparisonData(@RequestBody List<Long> productIds) {
@@ -83,6 +87,10 @@ public class AnalyticsController {
         return ResponseEntity.ok(analyticsService.getComparisonData(productIds));
     }
 
+    /**
+     * Генерирует и возвращает PDF-отчет для главной информационной панели.
+     * Принимает JSON с фильтрами и снимки графиков.
+     */
     @PostMapping("/dashboard/export-pdf")
     public ResponseEntity<byte[]> exportDashboardPdf(
             @RequestPart("filters") String filtersJson,
@@ -116,14 +124,9 @@ public class AnalyticsController {
         return new ResponseEntity<>(pdfContents, headers, HttpStatus.OK);
     }
 
-    // Вспомогательный класс для десериализации фильтров
-    @Data
-    private static class DashboardFilters {
-        private LocalDate startDate;
-        private LocalDate endDate;
-        private Long categoryId;
-    }
-
+    /**
+     * Генерирует и возвращает PDF-отчет для страницы детализации товара.
+     */
     @PostMapping("/product/{productId}/export-pdf")
     public ResponseEntity<byte[]> exportProductDetailsPdf(
             @PathVariable Long productId,
@@ -146,13 +149,17 @@ public class AnalyticsController {
         return new ResponseEntity<>(pdfContents, headers, HttpStatus.OK);
     }
 
+    /**
+     * Генерирует и возвращает PDF-отчет для страницы сравнения.
+     */
     @PostMapping("/compare/export-pdf")
     public ResponseEntity<byte[]> exportComparisonPdf(
             @RequestPart("productIds") String productIdsJson,
-            @RequestPart("charts") MultipartFile[] charts // Принимаем массив файлов
+            @RequestPart("charts") MultipartFile[] charts
     ) throws IOException {
 
-        List<Long> productIds = objectMapper.readValue(productIdsJson, new TypeReference<List<Long>>() {});
+        List<Long> productIds = objectMapper.readValue(productIdsJson, new TypeReference<List<Long>>() {
+        });
         if (productIds == null || productIds.isEmpty()) {
             return ResponseEntity.badRequest().build();
         }
@@ -174,5 +181,15 @@ public class AnalyticsController {
         headers.setContentLength(pdfContents.length);
 
         return new ResponseEntity<>(pdfContents, headers, HttpStatus.OK);
+    }
+
+    /**
+     * Внутренний класс для удобной десериализации фильтров из JSON.
+     */
+    @Data
+    private static class DashboardFilters {
+        private LocalDate startDate;
+        private LocalDate endDate;
+        private Long categoryId;
     }
 }

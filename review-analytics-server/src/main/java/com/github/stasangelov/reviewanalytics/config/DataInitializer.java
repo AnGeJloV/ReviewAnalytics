@@ -18,16 +18,27 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+/**
+ * Компонент, отвечающий за инициализацию базовых данных при старте приложения.
+ * Реализует {@link CommandLineRunner}, что гарантирует выполнение метода {@code run}
+ * после того, как контекст Spring Boot будет полностью загружен.
+ */
 @Component
 @Slf4j
 @RequiredArgsConstructor
 public class DataInitializer implements CommandLineRunner {
 
+    // --- Поля и зависимости ---
     private final RoleRepository roleRepository;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final ReviewRepository reviewRepository;
 
+    /**
+     * Точка входа для инициализатора. Выполняется один раз при запуске приложения.
+     * Метод создает роли и пользователей по умолчанию, а также выполняет
+     * необходимые миграции данных, такие как пересчет рейтингов.
+     */
     @Override
     @Transactional
     public void run(String... args) throws Exception {
@@ -47,10 +58,10 @@ public class DataInitializer implements CommandLineRunner {
 
         log.info("Инициализация системных данных завершена.");
     }
+
     /**
-     * Вспомогательный метод, который ищет роль по имени. Если не находит - создает и сохраняет.
-     * @param roleName Имя роли для создания/поиска.
-     * @return Сущность Role (найденная или только что созданная).
+     * Ищет роль по имени в базе данных. Если роль не найдена, создает и сохраняет ее.
+     * Этот метод гарантирует наличие системных ролей.
      */
     private Role createRoleIfNotFound(Role.RoleName roleName) {
         return roleRepository.findByName(roleName)
@@ -63,11 +74,8 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     /**
-     * Вспомогательный метод для создания пользователя, если он отсутствует в БД.
-     * @param name Имя пользователя.
-     * @param email Email (используется как логин).
-     * @param password Пароль в открытом виде (будет захеширован).
-     * @param roles Набор ролей, которые нужно присвоить пользователю.
+     * Создает пользователя, если он с указанным email еще не существует в базе данных.
+     * Пароль автоматически хешируется перед сохранением.
      */
     private void createUserIfNotFound(String name, String email, String password, Set<Role> roles) {
         // Проверяем, существует ли пользователь с таким email
@@ -75,7 +83,6 @@ public class DataInitializer implements CommandLineRunner {
             User user = new User();
             user.setName(name);
             user.setEmail(email);
-            // Обязательно хешируем пароль!
             user.setPasswordHash(passwordEncoder.encode(password));
             user.setActive(true);
             user.setRoles(new HashSet<>(roles));
@@ -86,9 +93,10 @@ public class DataInitializer implements CommandLineRunner {
             log.info("Пользователь с email='{}' уже существует. Пропускаем создание.", email);
         }
     }
+
     /**
-     * Новый метод для пересчета рейтингов.
-     * Загружает все отзывы, у которых не посчитан рейтинг, и рассчитывает его.
+     * Находит все отзывы с нерассчитанным интегральным рейтингом (NULL)
+     * и вычисляет его значение. Полезно для миграции старых данных.
      */
     private void recalculateAllIntegralRatings() {
         log.info("Проверка и пересчет интегральных рейтингов...");
@@ -112,9 +120,9 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     /**
-     * Копия метода расчета из ReviewService.
-     * Мы дублируем его здесь, чтобы не создавать циклическую зависимость
-     * между DataInitializer и ReviewService.
+     * Локальная копия метода расчета взвешенного интегрального рейтинга для отзыва.
+     * Дублируется здесь, чтобы избежать циклической зависимости между сервисами и
+     * компонентами конфигурации.
      */
     private Double calculateIntegralRating(Review review) {
         if (review.getReviewRatings() == null || review.getReviewRatings().isEmpty()) {
