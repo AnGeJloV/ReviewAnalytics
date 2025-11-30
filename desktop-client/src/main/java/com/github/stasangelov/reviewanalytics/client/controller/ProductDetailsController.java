@@ -320,7 +320,16 @@ public class ProductDetailsController {
         customLegendPane.getChildren().clear();
 
         int colorIndex = 0;
-        String[] colors = {"#333333", "#4D4D4D", "#666666", "#808080", "#999999", "#B3B3B3", "#CCCCCC", "#E0E0E0"};
+        String[] colors = {
+                "#3b82f6", // Синий
+                "#10b981", // Изумрудный
+                "#f59e0b", // Оранжевый
+                "#8b5cf6", // Фиолетовый
+                "#ec4899", // Розовый
+                "#06b6d4", // Бирюзовый
+                "#ef4444", // Красный
+                "#84cc16"  // Лайм
+        };
 
         for (PieChart.Data d : criteriaProfileChart.getData()) {
             Node node = d.getNode();

@@ -227,7 +227,7 @@ public class ComparisonController {
                                     .max().orElse(0.0);
 
                             if (item == maxInRow && maxInRow > 0) {
-                                setStyle("-fx-background-color: #666666; -fx-text-fill: white;");
+                                setStyle("-fx-background-color: ffecc4;");
                             }
                         }
                     }
@@ -345,7 +345,12 @@ public class ComparisonController {
      */
     private void applyChartStylesAndLegend(List<XYChart.Series<String, Number>> seriesList) {
         customLegendPane.getChildren().clear();
-        String[] strokeColors = {"#333333", "#666666", "#999999", "#CCCCCC"};
+        String[] strokeColors = {
+                "#3b82f6", // Синий
+                "#8b5cf6", // Фиолетовый
+                "#10b981", // Изумрудный
+                "#ec4899"  // Розовый
+        };
         String[] strokeDashArrays = {"", "5, 5", "10, 5", "2, 5"};
 
         for (int i = 0; i < seriesList.size(); i++) {

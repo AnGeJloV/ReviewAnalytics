@@ -45,8 +45,8 @@
         </Button>
     </VBox>
 
-    <Button onAction="#onLogout" styleClass="nav-button-logout" text="Выход" alignment="BASELINE_LEFT"
-            graphicTextGap="15.0">
+    <Button  maxWidth="Infinity" alignment="BASELINE_LEFT" graphicTextGap="20.0" onAction="#onLogout" styleClass="nav-button-logout"
+             text="Выход">
         <graphic>
             <SVGPath
                     content="M16,17V14H9V12H16V9L20,13L16,17M14,2A2,2 0 0,1 16,4V6H14V4H5V20H14V18H16V20A2,2 0 0,1 14,22H5A2,2 0 0,1 3,20V4A2,2 0 0,1 5,2H14Z"/>

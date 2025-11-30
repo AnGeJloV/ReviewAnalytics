@@ -15,12 +15,15 @@
         <Insets bottom="20.0" left="20.0" right="20.0" top="20.0"/>
     </padding>
 
-    <VBox styleClass="chart-card">
+    <VBox styleClass="chart-card" VBox.vgrow="ALWAYS">
         <HBox alignment="CENTER_LEFT" spacing="10">
-            <TextField fx:id="searchField" prefWidth="300.0" promptText="Поиск по названию товара..."/>
+            <TextField fx:id="searchField" prefWidth="300.0" styleClass="search-field" promptText="Поиск по названию товара..."/>
         </HBox>
 
         <TableView fx:id="reviewTable" VBox.vgrow="ALWAYS">
+            <columnResizePolicy>
+                <TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/>
+            </columnResizePolicy>
             <columns>
                 <TableColumn fx:id="productCol" prefWidth="350.0" text="Товар"/>
                 <TableColumn fx:id="ratingCol" prefWidth="120.0" text="Интегр. рейтинг"/>
